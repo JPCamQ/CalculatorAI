@@ -222,12 +222,13 @@
         <circle cx="12" cy="12" r="11.5" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1" fill="none" />
       </g>
 
-      <!-- Icono: Tasa Personalizada (Estrella dorada circular) -->
+      <!-- Icono: Tasa Personalizada (Lápiz dorado circular) -->
       <g id="flag-custom">
         <g clip-path="url(#circle-clip)">
           <circle cx="12" cy="12" r="12" fill="#1c1c1e" />
-          <polygon points="12,5.5 13.8,9.5 18.2,10 14.8,13 15.8,17.2 12,15.2 8.2,17.2 9.2,13 5.8,10 10.2,9.5"
-            fill="#facc15" />
+          <g transform="translate(12, 12) scale(0.65) translate(-12, -12)">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#facc15" />
+          </g>
         </g>
         <circle cx="12" cy="12" r="11.5" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1" fill="none" />
       </g>
@@ -271,12 +272,13 @@
                 <span class="selector-label">₮ USDT</span>
               </button>
               <button type="button" class="selector-btn" data-currency="Custom"
-                aria-label="Seleccionar Tasa Personalizada">
+                aria-label="Seleccionar Dólar Personalizado">
                 <span class="selector-flag">
                   <svg viewBox="0 0 24 24" class="svg-icon">
                     <use href="#flag-custom" />
                   </svg>
                 </span>
+                <span class="selector-label">$ USD</span>
               </button>
               <button type="button" class="selector-btn" data-currency="VES" aria-label="Seleccionar Bolívar VES">
                 <span class="selector-flag">
@@ -363,9 +365,10 @@
                 aria-label="Seleccionar Tasa Personalizada">
                 <span class="selector-flag">
                   <svg viewBox="0 0 24 24" class="svg-icon">
-                    <use href="#flag-custom" />
+                    <use href="#flag-usd" />
                   </svg>
                 </span>
+                <span class="selector-label">$ USD</span>
               </button>
             </div>
           </div>
