@@ -27,6 +27,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const iosSheet = document.getElementById('ios-install-sheet');
   const closeIosSheet = document.getElementById('close-ios-sheet');
 
+  // Nuevos Elementos del DOM Premium
+  const connectionStatus = document.getElementById('connection-status');
+  const connectionText = document.getElementById('connection-text');
+  const btnSyncRates = document.getElementById('btn-sync-rates');
+
+  const dashUsdVal = document.getElementById('dash-usd-val');
+  const dashEurVal = document.getElementById('dash-eur-val');
+  const dashUsdtVal = document.getElementById('dash-usdt-val');
+
+  const formulaForeignCinta = document.getElementById('formula-foreign-cinta');
+  const formulaVesCinta = document.getElementById('formula-ves-cinta');
+
   // --- SVGs de Divisas para los Inputs ---
   const currencySvgs = {
     USD: `<svg viewBox="0 0 24 24" class="svg-icon"><use href="#flag-usd"/></svg>`,
@@ -86,6 +98,81 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Parser y Evaluación de Fórmulas Matemáticas ---
+  function evaluarMatematicaSegura(s) {
+    // Extraer tokens válidos: números enteros/decimales y operadores (+, -, *, /)
+    const tokens = s.match(/([0-9]+(?:\.[0-9]+)?)|([\+\-\*\/])/g);
+    if (!tokens) return NaN;
+
+    // Primer paso: Resolver signos negativos unarios y consolidar tokens
+    const processedTokens = [];
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      // Si es un signo menos y está al inicio o sigue a otro operador, es unario negativo
+      if (token === '-' && (i === 0 || ['+', '-', '*', '/'].includes(processedTokens[processedTokens.length - 1]))) {
+        if (i + 1 < tokens.length && /^[0-9.]+$/.test(tokens[i + 1])) {
+          processedTokens.push('-' + tokens[i + 1]);
+          i++; // Saltamos el número ya consolidado con el signo
+        } else {
+          return NaN;
+        }
+      } else {
+        processedTokens.push(token);
+      }
+    }
+
+    // Segundo paso: Precedencia alta (Multiplicación y División)
+    const valuesAfterMulDiv = [];
+    let i = 0;
+    while (i < processedTokens.length) {
+      const token = processedTokens[i];
+      if (token === '*' || token === '/') {
+        const prevVal = parseFloat(valuesAfterMulDiv.pop());
+        const nextToken = processedTokens[i + 1];
+        if (nextToken === undefined) return NaN; // Operador al final incompleto
+        const nextVal = parseFloat(nextToken);
+        if (isNaN(prevVal) || isNaN(nextVal)) return NaN;
+
+        let res;
+        if (token === '*') {
+          res = prevVal * nextVal;
+        } else {
+          if (nextVal === 0) return NaN; // División por cero
+          res = prevVal / nextVal;
+        }
+        valuesAfterMulDiv.push(res);
+        i += 2;
+      } else {
+        valuesAfterMulDiv.push(token);
+        i++;
+      }
+    }
+
+    // Tercer paso: Precedencia baja (Suma y Resta)
+    if (valuesAfterMulDiv.length === 0) return NaN;
+    let total = parseFloat(valuesAfterMulDiv[0]);
+    if (isNaN(total)) return NaN;
+
+    let j = 1;
+    while (j < valuesAfterMulDiv.length) {
+      const op = valuesAfterMulDiv[j];
+      const valToken = valuesAfterMulDiv[j + 1];
+      if (valToken === undefined) return NaN;
+      const val = parseFloat(valToken);
+      if (isNaN(val)) return NaN;
+
+      if (op === '+') {
+        total += val;
+      } else if (op === '-') {
+        total -= val;
+      } else {
+        return NaN; // Operador no reconocido en suma/resta
+      }
+      j += 2;
+    }
+
+    return isFinite(total) ? total : NaN;
+  }
+
   function evaluarExpresionIncompleta(formula) {
     if (!formula) return NaN;
 
@@ -107,17 +194,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (s === '') return NaN;
 
-    // Validar caracteres permitidos (solo números, operadores, espacios y puntos decimales)
+    // Validar caracteres permitidos
     if (!/^[0-9\+\-\*\/\.\s]+$/.test(s)) {
       return NaN;
     }
 
-    try {
-      const result = new Function(`return (${s})`)();
-      return typeof result === 'number' && isFinite(result) ? result : NaN;
-    } catch (e) {
-      return NaN;
-    }
+    return evaluarMatematicaSegura(s);
   }
 
   // --- Funciones de Formateo de Cantidades ---
@@ -188,6 +270,114 @@ document.addEventListener('DOMContentLoaded', () => {
     return rates[c] || 0;
   }
 
+  // Envolver fetch con un timeout
+  function fetchWithTimeout(url, options = {}, timeout = 4500) {
+    return Promise.race([
+      fetch(url, options),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout de red')), timeout)
+      )
+    ]);
+  }
+
+  // Actualizar dashboard de tasas de referencia
+  function actualizarDashboardTasas() {
+    if (dashUsdVal) dashUsdVal.textContent = formatearCantidad(rates.USD, 2);
+    if (dashEurVal) dashEurVal.textContent = formatearCantidad(rates.EUR, 2);
+    if (dashUsdtVal) dashUsdtVal.textContent = formatearCantidad(rates.USDT, 2);
+
+    // Resaltar la tarjeta del dashboard que coincide con la divisa origen activa
+    const divisaOrigenActiva = !isReversed ? activeForeignCurrency : activeVesCurrency;
+    
+    document.querySelectorAll('.dashboard-card').forEach(card => {
+      const ref = card.dataset.refCurrency;
+      if (ref === divisaOrigenActiva) {
+        card.classList.add('active-card');
+      } else {
+        card.classList.remove('active-card');
+      }
+    });
+  }
+
+  // Control online/offline de conectividad
+  function actualizarEstadoRed() {
+    if (!connectionStatus || !connectionText) return;
+    if (navigator.onLine) {
+      connectionStatus.className = 'connection-badge online';
+      connectionText.textContent = 'Online';
+      document.querySelectorAll('.card-indicator').forEach(ind => {
+        ind.style.backgroundColor = '#10b981';
+        ind.style.boxShadow = '0 0 6px #10b981';
+      });
+    } else {
+      connectionStatus.className = 'connection-badge offline';
+      connectionText.textContent = 'Offline';
+      document.querySelectorAll('.card-indicator').forEach(ind => {
+        ind.style.backgroundColor = '#ef4444';
+        ind.style.boxShadow = '0 0 6px #ef4444';
+      });
+    }
+  }
+
+  // Animar los campos de entrada para que no cambien bruscamente
+  function animarEntradaInputs() {
+    if (!inputForeign || !inputVes) return;
+    inputForeign.classList.remove('fade-slide-up');
+    inputVes.classList.remove('fade-slide-up');
+    void inputForeign.offsetWidth; // Forzar reflow para reiniciar la animación CSS
+    inputForeign.classList.add('fade-slide-up');
+    inputVes.classList.add('fade-slide-up');
+  }
+
+  // Actualizar la cinta superior del input con la fórmula en progreso
+  function actualizarCintaFormula() {
+    const inputActivo = activeInput;
+    const cintaActiva = (inputActivo === inputForeign) ? formulaForeignCinta : formulaVesCinta;
+    const cintaInactiva = (inputActivo === inputForeign) ? formulaVesCinta : formulaForeignCinta;
+
+    if (cintaInactiva) cintaInactiva.textContent = '';
+    if (!cintaActiva) return;
+
+    const valor = inputActivo.value.trim();
+    // Si contiene operadores matemáticos, mostrar la fórmula cruda
+    if (/[\+\-×÷]/.test(valor)) {
+      cintaActiva.textContent = valor;
+    } else {
+      cintaActiva.textContent = '';
+    }
+  }
+
+  // Suscribirse a eventos de red
+  window.addEventListener('online', actualizarEstadoRed);
+  window.addEventListener('offline', actualizarEstadoRed);
+  actualizarEstadoRed(); // Inicializar estado de red
+
+  // Suscribirse a botón de sincronización manual
+  if (btnSyncRates) {
+    btnSyncRates.addEventListener('click', async () => {
+      if (!navigator.onLine) {
+        mostrarToast('Sin conexión a internet');
+        return;
+      }
+      
+      vibrarTeclado();
+      btnSyncRates.classList.add('syncing');
+      mostrarToast('Sincronizando tasas oficiales...');
+      
+      try {
+        await consultarAPIs();
+        mostrarToast('Tasas actualizadas con éxito');
+      } catch (e) {
+        console.warn('Fallo de sincronización manual:', e);
+        mostrarToast('Error de red al actualizar tasas');
+      } finally {
+        setTimeout(() => {
+          btnSyncRates.classList.remove('syncing');
+        }, 800);
+      }
+    });
+  }
+
   // --- Inicialización de la Aplicación ---
   cargarTasasLocales();
   consultarAPIs();
@@ -236,15 +426,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1. Obtener USD (BCV Oficial)
     try {
-      const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+      const response = await fetchWithTimeout('https://ve.dolarapi.com/v1/dolares/oficial');
       if (response.ok) {
         const data = await response.json();
-        const valorOficial = data.promedio || data.venta;
-        officialRates.USD = valorOficial;
-        updateTimes.USD = formatearFecha(data.fechaActualizacion);
+        const valorOficial = data ? (data.promedio || data.venta || data.compra) : null;
+        if (valorOficial && typeof valorOficial === 'number' && valorOficial > 0) {
+          officialRates.USD = valorOficial;
+          updateTimes.USD = formatearFecha(data.fechaActualizacion);
 
-        if (!isManualRate.USD) {
-          rates.USD = valorOficial;
+          if (!isManualRate.USD) {
+            rates.USD = valorOficial;
+          }
         }
       }
     } catch (err) {
@@ -253,15 +445,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. Obtener EUR (BCV Oficial)
     try {
-      const response = await fetch('https://ve.dolarapi.com/v1/euros/oficial');
+      const response = await fetchWithTimeout('https://ve.dolarapi.com/v1/euros/oficial');
       if (response.ok) {
         const data = await response.json();
-        const valorOficial = data.promedio || data.venta;
-        officialRates.EUR = valorOficial;
-        updateTimes.EUR = formatearFecha(data.fechaActualizacion);
+        const valorOficial = data ? (data.promedio || data.venta || data.compra) : null;
+        if (valorOficial && typeof valorOficial === 'number' && valorOficial > 0) {
+          officialRates.EUR = valorOficial;
+          updateTimes.EUR = formatearFecha(data.fechaActualizacion);
 
-        if (!isManualRate.EUR) {
-          rates.EUR = valorOficial;
+          if (!isManualRate.EUR) {
+            rates.EUR = valorOficial;
+          }
         }
       }
     } catch (err) {
@@ -270,20 +464,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. Obtener USDT (Binance P2P)
     try {
-      const response = await fetch('https://criptoya.com/api/binancep2p/USDT/VES/1');
+      const response = await fetchWithTimeout('https://criptoya.com/api/binancep2p/USDT/VES/1');
       if (response.ok) {
         const data = await response.json();
-        let valorOficial = 0;
-        if (data.ask && data.bid) {
-          valorOficial = (parseFloat(data.ask) + parseFloat(data.bid)) / 2;
-        } else {
-          valorOficial = parseFloat(data.ask || data.bid);
-        }
-        officialRates.USDT = valorOficial;
-        updateTimes.USDT = formatearFecha(new Date().toISOString());
+        if (data) {
+          let valorOficial = 0;
+          if (data.ask && data.bid) {
+            valorOficial = (parseFloat(data.ask) + parseFloat(data.bid)) / 2;
+          } else {
+            valorOficial = parseFloat(data.ask || data.bid);
+          }
+          if (valorOficial && typeof valorOficial === 'number' && valorOficial > 0 && !isNaN(valorOficial)) {
+            officialRates.USDT = valorOficial;
+            updateTimes.USDT = formatearFecha(new Date().toISOString());
 
-        if (!isManualRate.USDT) {
-          rates.USDT = valorOficial;
+            if (!isManualRate.USDT) {
+              rates.USDT = valorOficial;
+            }
+          }
         }
       }
     } catch (err) {
@@ -433,6 +631,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    // Sincronizar el Dashboard de Tasas
+    actualizarDashboardTasas();
+
     if (isEditingRate) {
       rateCalcText.classList.add('editing-rate');
       return;
@@ -547,10 +748,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Escuchar cambios nativos por si acaso
   inputForeign.addEventListener('input', () => {
     realizarConversion();
+    actualizarCintaFormula();
   });
 
   inputVes.addEventListener('input', () => {
     realizarConversion();
+    actualizarCintaFormula();
   });
 
   // Eventos Blur para evaluar y formatear las cantidades al salir
@@ -562,6 +765,7 @@ document.addEventListener('DOMContentLoaded', () => {
       inputForeign.value = '';
     }
     realizarConversion();
+    actualizarCintaFormula();
   });
 
   inputVes.addEventListener('blur', () => {
@@ -572,6 +776,7 @@ document.addEventListener('DOMContentLoaded', () => {
       inputVes.value = '';
     }
     realizarConversion();
+    actualizarCintaFormula();
   });
 
   // --- Botón de Intercambio (Swap) ---
@@ -624,8 +829,10 @@ document.addEventListener('DOMContentLoaded', () => {
         activeInput.value = '';
       }
 
+      animarEntradaInputs();
       actualizarDisplayTasa();
       realizarConversion();
+      actualizarCintaFormula();
     } else {
       // Mantener consistencia si es el mismo input
       if (activeInput === inputForeign) {
@@ -859,6 +1066,7 @@ document.addEventListener('DOMContentLoaded', () => {
           activeInput.value = '';
         }
         realizarConversion();
+        actualizarCintaFormula();
         clearOnNextKey = true;
         return;
       }
@@ -872,6 +1080,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         clearOnNextKey = true;
         realizarConversion();
+        actualizarCintaFormula();
         return;
       }
 
@@ -880,7 +1089,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (key === 'backspace') {
         if (valorActual.length > 0) {
           if (valorActual.endsWith(' ')) {
-            if (/ [+\-] $/.test(valorActual)) {
+            if (/ [+\-×÷] $/.test(valorActual)) {
               valorActual = valorActual.slice(0, -3);
             } else {
               valorActual = valorActual.slice(0, -1);
@@ -891,30 +1100,40 @@ document.addEventListener('DOMContentLoaded', () => {
           activeInput.value = valorActual;
         }
         realizarConversion();
+        actualizarCintaFormula();
         return;
       }
 
-      if (['+', '-'].includes(key)) {
+      const opVisuals = {
+        '+': '+',
+        '-': '-',
+        '*': '×',
+        '/': '÷'
+      };
+
+      if (['+', '-', '*', '/'].includes(key)) {
         clearOnNextKey = false;
+        const visualOp = opVisuals[key];
         if (valorActual === '') {
           if (key === '-') {
             valorActual = '-';
           } else {
-            valorActual = `0 ${key} `;
+            valorActual = `0 ${visualOp} `;
           }
         } else {
-          if (/ [+\-] $/.test(valorActual)) {
-            valorActual = valorActual.slice(0, -3) + ` ${key} `;
+          if (/ [+\-×÷] $/.test(valorActual)) {
+            valorActual = valorActual.slice(0, -3) + ` ${visualOp} `;
           } else if (valorActual === '-') {
-            if (key !== '-') {
+            if (visualOp !== '-') {
               valorActual = '';
             }
           } else {
-            valorActual += ` ${key} `;
+            valorActual += ` ${visualOp} `;
           }
         }
         activeInput.value = valorActual;
         realizarConversion();
+        actualizarCintaFormula();
         return;
       }
 
@@ -928,12 +1147,13 @@ document.addEventListener('DOMContentLoaded', () => {
         clearOnNextKey = false;
         activeInput.value = valorActual;
         realizarConversion();
+        actualizarCintaFormula();
         return;
       }
 
       // Procesamiento de coma y dígitos normales
       if (key === ',' || key === '.') {
-        const parts = valorActual.split(/[\+\-]/);
+        const parts = valorActual.split(/[\+\-×÷]/);
         const currentNumber = parts[parts.length - 1].trim();
 
         if (!currentNumber.includes(',')) {
@@ -945,7 +1165,7 @@ document.addEventListener('DOMContentLoaded', () => {
           activeInput.value = valorActual;
         }
       } else {
-        const parts = valorActual.split(/[\+\-]/);
+        const parts = valorActual.split(/[\+\-×÷]/);
         const currentNumber = parts[parts.length - 1].trim();
 
         if (currentNumber === '0' && key === '0') {
@@ -973,6 +1193,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       realizarConversion();
+      actualizarCintaFormula();
     });
 
     const limpiarFeedback = () => btn.classList.remove('active-touch');
@@ -1011,223 +1232,327 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function generarComprobantePNG(valForeign, codForeign, valVes, codVes, tasaTexto, tasaUpdate) {
     return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 800;
-      canvas.height = 800;
-      const ctx = canvas.getContext('2d');
+      const dibujarComprobante = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 800;
+        const ctx = canvas.getContext('2d');
 
-      // Dibujar fondo degradado premium
-      const grad = ctx.createLinearGradient(0, 0, 0, 800);
-      grad.addColorStop(0, '#0a0b10');
-      grad.addColorStop(1, '#020204');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 800, 800);
+        // Dibujar fondo degradado premium oscuro
+        const grad = ctx.createLinearGradient(0, 0, 0, 800);
+        grad.addColorStop(0, '#07080c');
+        grad.addColorStop(1, '#010102');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 800, 800);
 
-      // Obtener color de acento según la divisa origen activa
-      const divisaOrigenActiva = !isReversed ? activeForeignCurrency : activeVesCurrency;
-      const accentHex = {
-        USD: '#22c55e',
-        EUR: '#3b82f6',
-        USDT: '#00b4d8',
-        VES: '#a3e635',
-        Custom: '#facc15'
-      }[divisaOrigenActiva] || '#22c55e';
+        // Obtener color de acento según la divisa origen activa
+        const divisaOrigenActiva = !isReversed ? activeForeignCurrency : activeVesCurrency;
+        const accentHex = {
+          USD: '#22c55e',
+          EUR: '#3b82f6',
+          USDT: '#00b4d8',
+          VES: '#a3e635',
+          Custom: '#facc15'
+        }[divisaOrigenActiva] || '#22c55e';
 
-      const accentRGB = {
-        USD: '34, 197, 94',
-        EUR: '59, 130, 246',
-        USDT: '0, 180, 216',
-        VES: '163, 230, 53',
-        Custom: '250, 204, 21'
-      }[divisaOrigenActiva] || '34, 197, 94';
+        const accentRGB = {
+          USD: '34, 197, 94',
+          EUR: '59, 130, 246',
+          USDT: '0, 180, 216',
+          VES: '163, 230, 53',
+          Custom: '250, 204, 21'
+        }[divisaOrigenActiva] || '34, 197, 94';
 
-      const cardX = 60;
-      const cardY = 60;
-      const cardW = 680;
-      const cardH = 680;
-      const cardR = 24;
+        // Glows ambientales de neón sutiles en las esquinas
+        const glowRad1 = ctx.createRadialGradient(100, 100, 10, 100, 100, 300);
+        glowRad1.addColorStop(0, `rgba(${accentRGB}, 0.09)`);
+        glowRad1.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = glowRad1;
+        ctx.beginPath();
+        ctx.arc(100, 100, 300, 0, Math.PI * 2);
+        ctx.fill();
 
-      // Dibujar tarjeta interior
-      ctx.fillStyle = 'rgba(15, 17, 26, 0.7)';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(cardX, cardY, cardW, cardH, cardR);
-      ctx.fill();
-      ctx.stroke();
+        const glowRad2 = ctx.createRadialGradient(700, 700, 10, 700, 700, 300);
+        glowRad2.addColorStop(0, `rgba(${accentRGB}, 0.09)`);
+        glowRad2.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = glowRad2;
+        ctx.beginPath();
+        ctx.arc(700, 700, 300, 0, Math.PI * 2);
+        ctx.fill();
 
-      // Borde decorativo superior de color de acento (Efecto Neon)
-      ctx.fillStyle = accentHex;
-      ctx.beginPath();
-      ctx.roundRect(cardX + 40, cardY, cardW - 80, 4, 2);
-      ctx.fill();
-
-      // Logotipo de la app en la cabecera
-      const logoX = cardX + 50;
-      const logoY = cardY + 60;
-      ctx.fillStyle = `rgba(${accentRGB}, 0.12)`;
-      ctx.beginPath();
-      ctx.arc(logoX, logoY, 22, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = accentHex;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // Dibujar flechas del logo
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      // Flecha superior
-      ctx.beginPath();
-      ctx.moveTo(logoX - 8, logoY - 4);
-      ctx.lineTo(logoX + 8, logoY - 4);
-      ctx.lineTo(logoX + 4, logoY - 8);
-      ctx.stroke();
-
-      // Flecha inferior
-      ctx.beginPath();
-      ctx.moveTo(logoX + 8, logoY + 4);
-      ctx.lineTo(logoX - 8, logoY + 4);
-      ctx.lineTo(logoX - 4, logoY + 8);
-      ctx.stroke();
-
-      // Textos de cabecera
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 22px "Outfit", sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('CALCULATOR VES', logoX + 35, logoY - 2);
-
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '600 11px "Plus Jakarta Sans", sans-serif';
-      ctx.fillText('COMPROBANTE DE CONVERSIÓN', logoX + 35, logoY + 16);
-
-      // Fecha y hora del cálculo en tiempo real
-      const ahora = new Date();
-      const opciones = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
-      const fechaStr = ahora.toLocaleDateString('es-VE', opciones);
-
-      ctx.fillStyle = '#64748b';
-      ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillText(fechaStr, cardX + cardW - 50, logoY + 6);
-
-      // Caja 1: Monto Origen
-      const boxX = cardX + 50;
-      const boxW = cardW - 100;
-      const box1Y = cardY + 130;
-      const boxH = 100;
-
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(boxX, box1Y, boxW, boxH, 16);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '600 11px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('MONTO ORIGINAL', boxX + 24, box1Y + 32);
-
-      const symbolOrig = currencySymbols[codForeign] || '';
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 32px "Outfit", sans-serif';
-      ctx.fillText(`${symbolOrig} ${valForeign}`, boxX + 24, box1Y + 72);
-
-      // Círculo central con flecha hacia abajo
-      const arrowY = box1Y + boxH + 30;
-      ctx.fillStyle = `rgba(${accentRGB}, 0.1)`;
-      ctx.beginPath();
-      ctx.arc(400, arrowY, 20, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = accentHex;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-
-      ctx.strokeStyle = accentHex;
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      ctx.moveTo(400, arrowY - 6);
-      ctx.lineTo(400, arrowY + 6);
-      ctx.moveTo(395, arrowY + 1);
-      ctx.lineTo(400, arrowY + 6);
-      ctx.lineTo(405, arrowY + 1);
-      ctx.stroke();
-
-      // Caja 2: Monto Destino
-      const box2Y = arrowY + 30;
-      ctx.fillStyle = `rgba(${accentRGB}, 0.05)`;
-      ctx.strokeStyle = `rgba(${accentRGB}, 0.15)`;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(boxX, box2Y, boxW, boxH, 16);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = accentHex;
-      ctx.font = '600 11px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('VALOR CONVERTIDO', boxX + 24, box2Y + 32);
-
-      const symbolDest = currencySymbols[codVes] || '';
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 36px "Outfit", sans-serif';
-      ctx.fillText(`${symbolDest} ${valVes}`, boxX + 24, box2Y + 72);
-
-      // Caja 3: Información Tasa y Referencia
-      const infoY = box2Y + boxH + 30;
-      const infoH = 95;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(boxX, infoY, boxW, infoH, 12);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '600 12px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('TASA DE CAMBIO APLICADA:', boxX + 20, infoY + 30);
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 15px "Outfit", sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillText(tasaTexto, boxX + boxW - 20, infoY + 30);
-
-      ctx.fillStyle = '#64748b';
-      ctx.font = '600 12px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('FUENTES / ACTUALIZACIÓN:', boxX + 20, infoY + 65);
-
-      ctx.fillStyle = '#e2e8f0';
-      ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillText(tasaUpdate, boxX + boxW - 20, infoY + 65);
-
-      // Footer del comprobante
-      const footerY = cardY + cardH - 30;
-      ctx.fillStyle = '#64748b';
-      ctx.font = '600 11px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('CALCULADO DE FORMA SEGURA CON CALCULATOR VES', 400, footerY);
-
-      ctx.fillStyle = 'rgba(163, 230, 53, 0.6)';
-      ctx.font = 'bold 11px "Outfit", sans-serif';
-      ctx.fillText('calculator-ves.onrender.com', 400, footerY + 16);
-
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Canvas toBlob falló'));
+        // Cuadrícula tecnológica muy tenue de fondo
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.012)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < 800; x += 40) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, 800);
+          ctx.stroke();
         }
-      }, 'image/png');
+        for (let y = 0; y < 800; y += 40) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(800, y);
+          ctx.stroke();
+        }
+
+        const cardX = 60;
+        const cardY = 60;
+        const cardW = 680;
+        const cardH = 680;
+        const cardR = 24;
+
+        // Dibujar tarjeta interior con sombra realista y profunda
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+        ctx.shadowBlur = 45;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 22;
+
+        ctx.fillStyle = 'rgba(15, 17, 26, 0.75)';
+        ctx.beginPath();
+        ctx.roundRect(cardX, cardY, cardW, cardH, cardR);
+        ctx.fill();
+
+        // Desactivar sombra para evitar ralentizaciones o efectos no deseados
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetY = 0;
+
+        // Borde glassmorphic brillante (reflectante) de la tarjeta
+        const strokeGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
+        strokeGrad.addColorStop(0, 'rgba(255, 255, 255, 0.16)');
+        strokeGrad.addColorStop(0.3, 'rgba(255, 255, 255, 0.02)');
+        strokeGrad.addColorStop(0.7, 'rgba(255, 255, 255, 0.01)');
+        strokeGrad.addColorStop(1, `rgba(${accentRGB}, 0.28)`);
+        ctx.strokeStyle = strokeGrad;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Borde decorativo superior neon
+        ctx.fillStyle = accentHex;
+        ctx.beginPath();
+        ctx.roundRect(cardX + 40, cardY, cardW - 80, 4, 2);
+        ctx.fill();
+
+        // Logotipo de la app en la cabecera
+        const logoX = cardX + 50;
+        const logoY = cardY + 65;
+        ctx.fillStyle = `rgba(${accentRGB}, 0.12)`;
+        ctx.beginPath();
+        ctx.arc(logoX, logoY, 22, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = accentHex;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Dibujar flechas del logo
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Flecha superior
+        ctx.beginPath();
+        ctx.moveTo(logoX - 8, logoY - 4);
+        ctx.lineTo(logoX + 8, logoY - 4);
+        ctx.lineTo(logoX + 4, logoY - 8);
+        ctx.stroke();
+
+        // Flecha inferior
+        ctx.beginPath();
+        ctx.moveTo(logoX + 8, logoY + 4);
+        ctx.lineTo(logoX - 8, logoY + 4);
+        ctx.lineTo(logoX - 4, logoY + 8);
+        ctx.stroke();
+
+        // Textos de cabecera
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 22px "Outfit", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('CALCULATOR VES', logoX + 35, logoY - 2);
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '600 11px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText('COMPROBANTE DE CONVERSIÓN', logoX + 35, logoY + 16);
+
+        // Obtener fecha y hora del cálculo en tiempo real (formateado premium)
+        const ahora = new Date();
+        const opciones = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+        const fechaStr = ahora.toLocaleDateString('es-VE', opciones);
+
+        // Caja de Fecha de Emisión (esquina superior derecha) - Premium y Minimalista
+        const dateBoxW = 210;
+        const dateBoxH = 34;
+        const dateBoxX = cardX + cardW - dateBoxW - 50;
+        const dateBoxY = logoY - 14;
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.025)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(dateBoxX, dateBoxY, dateBoxW, dateBoxH, 10);
+        ctx.fill();
+        ctx.stroke();
+
+        // Imprimir fecha centrada en la caja
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '500 11px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(fechaStr, dateBoxX + dateBoxW / 2, dateBoxY + 21);
+
+        // Caja 1: Monto Origen
+        const boxX = cardX + 50;
+        const boxW = cardW - 100;
+        const box1Y = cardY + 140;
+        const boxH = 100;
+
+        // Sombra suave para la Caja 1
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.22)';
+        ctx.shadowBlur = 15;
+        ctx.shadowOffsetY = 6;
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.022)';
+        ctx.beginPath();
+        ctx.roundRect(boxX, box1Y, boxW, boxH, 16);
+        ctx.fill();
+
+        // Desactivar sombra
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetY = 0;
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '600 11px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('MONTO ORIGINAL', boxX + 24, box1Y + 34);
+
+        const symbolOrig = currencySymbols[codForeign] || '';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 32px "Outfit", sans-serif';
+        ctx.fillText(`${symbolOrig} ${valForeign}`, boxX + 24, box1Y + 72);
+
+        // Círculo central con flecha hacia abajo
+        const arrowY = box1Y + boxH + 30;
+        ctx.fillStyle = `rgba(${accentRGB}, 0.12)`;
+        ctx.beginPath();
+        ctx.arc(400, arrowY, 20, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = accentHex;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.strokeStyle = accentHex;
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(400, arrowY - 6);
+        ctx.lineTo(400, arrowY + 6);
+        ctx.moveTo(395, arrowY + 1);
+        ctx.lineTo(400, arrowY + 6);
+        ctx.lineTo(405, arrowY + 1);
+        ctx.stroke();
+
+        // Caja 2: Monto Destino
+        const box2Y = arrowY + 30;
+
+        // Sombra suave para la Caja 2
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.28)';
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetY = 8;
+
+        ctx.fillStyle = `rgba(${accentRGB}, 0.06)`;
+        ctx.beginPath();
+        ctx.roundRect(boxX, box2Y, boxW, boxH, 16);
+        ctx.fill();
+
+        // Desactivar sombra
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetY = 0;
+
+        // Borde acentuado de la Caja 2
+        ctx.strokeStyle = `rgba(${accentRGB}, 0.24)`;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        ctx.fillStyle = accentHex;
+        ctx.font = '600 11px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('VALOR CONVERTIDO', boxX + 24, box2Y + 34);
+
+        const symbolDest = currencySymbols[codVes] || '';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 36px "Outfit", sans-serif';
+        ctx.fillText(`${symbolDest} ${valVes}`, boxX + 24, box2Y + 72);
+
+        // Caja 3: Información Tasa y Referencia
+        const infoY = box2Y + boxH + 30;
+        const infoH = 95;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(boxX, infoY, boxW, infoH, 12);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '600 12px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('TASA DE CAMBIO APLICADA:', boxX + 20, infoY + 30);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 15px "Outfit", sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(tasaTexto, boxX + boxW - 20, infoY + 30);
+
+        ctx.fillStyle = '#64748b';
+        ctx.font = '600 12px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('FUENTES / ACTUALIZACIÓN:', boxX + 20, infoY + 65);
+
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(tasaUpdate, boxX + boxW - 20, infoY + 65);
+
+        // Footer del comprobante
+        const footerY = cardY + cardH - 35;
+        ctx.fillStyle = '#64748b';
+        ctx.font = '600 11px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('CALCULADO DE FORMA SEGURA CON CALCULATOR VES', 400, footerY);
+
+        ctx.fillStyle = 'rgba(163, 230, 53, 0.6)';
+        ctx.font = 'bold 11px "Outfit", sans-serif';
+        ctx.fillText('calculator-ves.onrender.com', 400, footerY + 16);
+
+
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Canvas toBlob falló'));
+          }
+        }, 'image/png');
+      };
+
+      if (document.fonts) {
+        document.fonts.ready.then(() => {
+          dibujarComprobante();
+        }).catch((err) => {
+          console.warn('Fallo al cargar fuentes para Canvas, usando fuentes locales:', err);
+          dibujarComprobante();
+        });
+      } else {
+        dibujarComprobante();
+      }
     });
   }
 

@@ -240,6 +240,53 @@
   <div class="glow glow-2"></div>
 
   <div class="app-container">
+    <!-- Cabecera Premium de la Aplicación -->
+    <header class="app-header">
+      <div class="header-main">
+        <div class="brand">
+          <div class="brand-logo" id="app-logo">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 5L9 19M9 19L5 15M9 19L13 15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M15 19L15 5M15 5L11 9M15 5L19 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <h1>CALCULATOR VES</h1>
+        </div>
+        <div class="header-actions">
+          <div class="connection-badge online" id="connection-status">
+            <span class="badge-dot"></span>
+            <span id="connection-text">Online</span>
+          </div>
+          <button type="button" class="header-action-btn" id="btn-sync-rates" aria-label="Actualizar tasas" title="Actualizar tasas">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 4v6h-6"></path>
+              <path d="M1 20v-6h6"></path>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Dashboard Compacto de Tasas Oficiales -->
+      <section class="tasas-dashboard">
+        <div class="dashboard-card" data-ref-currency="USD">
+          <div class="card-indicator"></div>
+          <span class="card-label">USD BCV</span>
+          <span class="card-value" id="dash-usd-val">0,00</span>
+        </div>
+        <div class="dashboard-card" data-ref-currency="EUR">
+          <div class="card-indicator"></div>
+          <span class="card-label">EUR BCV</span>
+          <span class="card-value" id="dash-eur-val">0,00</span>
+        </div>
+        <div class="dashboard-card" data-ref-currency="USDT">
+          <div class="card-indicator"></div>
+          <span class="card-label">USDT Binance</span>
+          <span class="card-value" id="dash-usdt-val">0,00</span>
+        </div>
+      </section>
+    </header>
+
     <!-- Calculadora Card -->
     <main class="calculator-container">
       <div class="calculator-card">
@@ -278,7 +325,7 @@
                     <use href="#flag-custom" />
                   </svg>
                 </span>
-                <span class="selector-label">$ USD</span>
+                <span class="selector-label">$ PERS</span>
               </button>
               <button type="button" class="selector-btn" data-currency="VES" aria-label="Seleccionar Bolívar VES">
                 <span class="selector-flag">
@@ -291,6 +338,7 @@
             </div>
           </div>
 
+          <div class="formula-cinta" id="formula-foreign-cinta"></div>
           <div class="input-wrapper">
             <span class="input-symbol" id="foreign-symbol">$</span>
             <input type="text" id="input-foreign" inputmode="none" placeholder="1.00" autocomplete="off">
@@ -365,14 +413,14 @@
                 aria-label="Seleccionar Tasa Personalizada">
                 <span class="selector-flag">
                   <svg viewBox="0 0 24 24" class="svg-icon">
-                    <use href="#flag-usd" />
+                    <use href="#flag-custom" />
                   </svg>
                 </span>
-                <span class="selector-label">$ USD</span>
+                <span class="selector-label">$ PERS</span>
               </button>
             </div>
           </div>
-
+          <div class="formula-cinta" id="formula-ves-cinta"></div>
           <div class="input-wrapper">
             <span class="input-symbol" id="ves-symbol">Bs.</span>
             <input type="text" id="input-ves" inputmode="none" placeholder="0.00" autocomplete="off">
@@ -405,29 +453,10 @@
 
       <!-- Contenedor del Teclado Numérico Fijo -->
       <div id="keypad-container" class="keypad-container">
-        <!-- Teclado Numérico Personalizado In-App de 4x4 -->
+        <!-- Teclado Numérico Personalizado In-App de 5 filas y 4 columnas -->
         <section class="numeric-keypad">
           <!-- Fila 1 -->
-          <button class="keypad-btn" data-key="1">1</button>
-          <button class="keypad-btn" data-key="2">2</button>
-          <button class="keypad-btn" data-key="3">3</button>
           <button class="keypad-btn clear-key" data-key="C">C</button>
-
-          <!-- Fila 2 -->
-          <button class="keypad-btn" data-key="4">4</button>
-          <button class="keypad-btn" data-key="5">5</button>
-          <button class="keypad-btn" data-key="6">6</button>
-          <button class="keypad-btn op-key" data-key="+">+</button>
-
-          <!-- Fila 3 -->
-          <button class="keypad-btn" data-key="7">7</button>
-          <button class="keypad-btn" data-key="8">8</button>
-          <button class="keypad-btn" data-key="9">9</button>
-          <button class="keypad-btn op-key" data-key="-">-</button>
-
-          <!-- Fila 4 -->
-          <button class="keypad-btn decimal-key" data-key=",">,</button>
-          <button class="keypad-btn" data-key="0">0</button>
           <button class="keypad-btn backspace-key" data-key="backspace" aria-label="Borrar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
               stroke-linejoin="round">
@@ -436,7 +465,30 @@
               <line x1="12" y1="9" x2="18" y2="15"></line>
             </svg>
           </button>
-          <button class="keypad-btn check-key" data-key="check" aria-label="Confirmar">✓</button>
+          <button class="keypad-btn op-key" data-key="/" aria-label="Dividir">÷</button>
+          <button class="keypad-btn op-key" data-key="*" aria-label="Multiplicar">×</button>
+
+          <!-- Fila 2 -->
+          <button class="keypad-btn" data-key="7">7</button>
+          <button class="keypad-btn" data-key="8">8</button>
+          <button class="keypad-btn" data-key="9">9</button>
+          <button class="keypad-btn op-key" data-key="-">-</button>
+
+          <!-- Fila 3 -->
+          <button class="keypad-btn" data-key="4">4</button>
+          <button class="keypad-btn" data-key="5">5</button>
+          <button class="keypad-btn" data-key="6">6</button>
+          <button class="keypad-btn op-key" data-key="+">+</button>
+
+          <!-- Fila 4 -->
+          <button class="keypad-btn" data-key="1">1</button>
+          <button class="keypad-btn" data-key="2">2</button>
+          <button class="keypad-btn" data-key="3">3</button>
+          <button class="keypad-btn check-key double-row" data-key="check" aria-label="Confirmar">✓</button>
+
+          <!-- Fila 5 -->
+          <button class="keypad-btn double-col" data-key="0">0</button>
+          <button class="keypad-btn decimal-key" data-key=",">,</button>
         </section>
       </div>
     </main>

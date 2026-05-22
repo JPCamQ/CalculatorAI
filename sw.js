@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'calc-divisas-v35';
+const CACHE_NAME = 'calc-divisas-v40-premium';
 const ASSETS = [
   './',
   './style.css',

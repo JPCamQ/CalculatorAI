@@ -68,7 +68,40 @@ body {
 
 /* --- Fondos con Gradientes y Brillos (Glows) --- */
 .glow {
-  display: none !important;
+  position: fixed;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--accent-color-rgb), 0.18) 0%, rgba(var(--accent-color-rgb), 0) 70%);
+  filter: blur(80px);
+  z-index: 0;
+  pointer-events: none;
+  transition: background 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  display: block !important;
+}
+
+.glow-1 {
+  top: -5%;
+  left: -5%;
+  animation: floatGlow1 20s infinite ease-in-out alternate;
+}
+
+.glow-2 {
+  bottom: 10%;
+  right: -10%;
+  animation: floatGlow2 25s infinite ease-in-out alternate;
+}
+
+@keyframes floatGlow1 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, 30px) scale(1.15); }
+  100% { transform: translate(-20px, 60px) scale(0.9); }
+}
+
+@keyframes floatGlow2 {
+  0% { transform: translate(0, 0) scale(1.1); }
+  50% { transform: translate(-30px, -40px) scale(0.85); }
+  100% { transform: translate(30px, 10px) scale(1.2); }
 }
 
 /* --- Contenedor Principal (App) --- */
@@ -148,6 +181,132 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.header-action-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  outline: none;
+}
+
+.header-action-btn:hover {
+  background: rgba(var(--accent-color-rgb), 0.1);
+  border-color: rgba(var(--accent-color-rgb), 0.35);
+  color: var(--accent-color);
+  box-shadow: 0 0 10px rgba(var(--accent-color-rgb), 0.2);
+}
+
+.header-action-btn:active {
+  transform: scale(0.92);
+}
+
+.header-action-btn svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.header-action-btn.syncing svg {
+  animation: spinnerRotate 1.2s infinite linear;
+}
+
+@keyframes spinnerRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* --- Dashboard Compacto de Tasas --- */
+.tasas-dashboard {
+  display: flex;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.dashboard-card {
+  flex: 1;
+  background: rgba(12, 13, 18, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 0.85rem;
+  padding: 0.55rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition-smooth);
+}
+
+.dashboard-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: transparent;
+  transition: var(--transition-smooth);
+}
+
+.dashboard-card[data-ref-currency="USD"]::before {
+  background: rgba(var(--color-usd-rgb), 0.3);
+}
+
+.dashboard-card[data-ref-currency="EUR"]::before {
+  background: rgba(var(--color-eur-rgb), 0.3);
+}
+
+.dashboard-card[data-ref-currency="USDT"]::before {
+  background: rgba(var(--color-usdt-rgb), 0.3);
+}
+
+.dashboard-card:hover {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+
+.card-indicator {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.card-label {
+  font-family: var(--font-secondary);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.card-value {
+  font-family: var(--font-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
+}
+
+.dashboard-card.active-card {
+  background: rgba(var(--accent-color-rgb), 0.05);
+  border-color: rgba(var(--accent-color-rgb), 0.2);
+}
+
+.dashboard-card.active-card .card-value {
+  color: var(--accent-color);
 }
 
 
@@ -519,15 +678,15 @@ body {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 50%;
-  background: #a3e635; /* Verde lima vibrante */
+  background: var(--accent-color);
   border: none;
   color: #000000; /* Icono negro */
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(163, 230, 53, 0.25);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(var(--accent-color-rgb), 0.3);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.8s ease;
   outline: none;
 }
 
@@ -542,13 +701,14 @@ body {
 }
 
 .swap-icon:hover {
-  background: #bef264; /* Verde lima más claro */
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(163, 230, 53, 0.4);
+  transform: scale(1.08);
+  filter: brightness(1.15);
+  box-shadow: 0 4px 14px rgba(var(--accent-color-rgb), 0.55);
 }
 
 .swap-icon:active {
-  transform: scale(0.95);
+  transform: scale(0.94);
+  filter: brightness(0.95);
 }
 
 /* (Sección de conversión rápida eliminada) */
@@ -893,18 +1053,19 @@ body {
 .numeric-keypad {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(5, auto);
   gap: 0.6rem;
   width: 100%;
 }
 
 .keypad-btn {
-  height: 3.5rem;
+  height: 3.2rem;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 1rem;
   color: #ffffff; /* Números en blanco puro */
   font-family: var(--font-secondary);
-  font-size: 1.4rem;
+  font-size: 1.35rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -915,6 +1076,15 @@ body {
   user-select: none;
 }
 
+.keypad-btn.double-col {
+  grid-column: span 2;
+}
+
+.keypad-btn.double-row {
+  grid-row: span 2;
+  height: auto;
+}
+
 .keypad-btn:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.15);
@@ -923,9 +1093,10 @@ body {
 /* Respuesta instantánea al tocar */
 .keypad-btn:active, .keypad-btn.active-touch {
   transform: scale(0.94);
-  background: rgba(255, 255, 255, 0.12) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
-  color: #ffffff !important;
+  background: rgba(var(--accent-color-rgb), 0.18) !important;
+  border-color: rgba(var(--accent-color-rgb), 0.4) !important;
+  color: var(--accent-color) !important;
+  box-shadow: 0 0 15px rgba(var(--accent-color-rgb), 0.15);
   transition: none;
 }
 
@@ -948,7 +1119,7 @@ body {
   color: #ffffff !important;
 }
 
-/* Teclas de Operadores (+ y -) */
+/* Teclas de Operadores (+, -, *, /) */
 .op-key {
   font-weight: 700;
 }
@@ -987,6 +1158,24 @@ body {
   color: #ffffff !important;
 }
 
+.op-key[data-key="*"], .op-key[data-key="/"] {
+  color: #3b82f6 !important; /* Azul premium */
+  border-color: rgba(59, 130, 246, 0.15) !important;
+  background: rgba(59, 130, 246, 0.04) !important;
+}
+
+.op-key[data-key="*"]:hover, .op-key[data-key="/"]:hover {
+  background: rgba(59, 130, 246, 0.08) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.op-key[data-key="*"]:active, .op-key[data-key="*"].active-touch,
+.op-key[data-key="/"]:active, .op-key[data-key="/"].active-touch {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
 .backspace-key svg {
   width: 1.4rem;
   height: 1.4rem;
@@ -1019,9 +1208,10 @@ body {
 }
 
 .check-key:active, .check-key.active-touch {
-  background: #15803d !important;
-  border-color: #15803d !important;
+  background: #22c55e !important;
+  border-color: #4ade80 !important;
   color: #ffffff !important;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.45);
   transform: scale(0.94);
 }
 
@@ -1030,6 +1220,46 @@ body {
 /* Clases auxiliares para ocultar elementos */
 .hidden {
   display: none !important;
+}
+
+/* --- Cinta de Fórmula en Progreso --- */
+.formula-cinta {
+  height: 1.1rem;
+  font-family: var(--font-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding-left: 0.1rem;
+  transition: opacity 0.2s ease;
+}
+
+.formula-cinta:empty {
+  opacity: 0;
+}
+
+/* Animación de entrada de datos al cambiar de divisa */
+.fade-slide-up {
+  animation: fadeSlideUp 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes fadeSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* --- Media Queries para Escritorio --- */
