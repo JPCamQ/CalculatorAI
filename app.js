@@ -644,11 +644,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (foreignFlagDisplay && foreignCodeDisplay) {
       foreignFlagDisplay.innerHTML = currencySvgs[activeForeignCurrency];
       
-      let label = '$ USD';
-      if (activeForeignCurrency === 'EUR') label = '€ EUR';
-      else if (activeForeignCurrency === 'USDT') label = '₮ USDT';
-      else if (activeForeignCurrency === 'Custom') label = '$ PERS';
-      else if (activeForeignCurrency === 'VES') label = 'Bs. VES';
+      let label = 'USD';
+      if (activeForeignCurrency === 'EUR') label = 'EUR';
+      else if (activeForeignCurrency === 'USDT') label = 'USDT';
+      else if (activeForeignCurrency === 'Custom') label = 'PERS';
+      else if (activeForeignCurrency === 'VES') label = 'VES';
       foreignCodeDisplay.textContent = label;
     }
 
@@ -658,10 +658,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (vesFlagDisplay && vesCodeDisplay) {
       vesFlagDisplay.innerHTML = currencySvgs[activeVesCurrency];
       
-      let label = 'Bs. VES';
-      if (activeVesCurrency === 'EUR') label = '€ EUR';
-      else if (activeVesCurrency === 'USD') label = '$ USD';
-      else if (activeVesCurrency === 'Custom') label = '$ PERS';
+      let label = 'VES';
+      if (activeVesCurrency === 'EUR') label = 'EUR';
+      else if (activeVesCurrency === 'USD') label = 'USD';
+      else if (activeVesCurrency === 'Custom') label = 'PERS';
       vesCodeDisplay.textContent = label;
     }
 
@@ -1127,6 +1127,79 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active-touch');
 
       const key = btn.dataset.key;
+
+      // LÓGICA DE ESCRITURA EN COMISIÓN PERSONALIZADA
+      if (activeInput === inputCustomCommission) {
+        let valActual = inputCustomCommission.value;
+
+        if (key === 'check') {
+          inputCustomCommission.blur();
+          const nuevoInput = !isReversed ? inputForeign : inputVes;
+          cambiarInputActivo(nuevoInput);
+          return;
+        }
+
+        if (key === 'C') {
+          inputCustomCommission.value = '';
+          activeCommissionPercent = 0;
+          clearOnNextKey = true;
+          realizarConversion();
+          return;
+        }
+
+        if (key === 'backspace') {
+          if (valActual.length > 0) {
+            valActual = valActual.slice(0, -1);
+            inputCustomCommission.value = valActual;
+            
+            let valText = valActual.trim().replace(/,/g, '.');
+            let val = parseFloat(valText) || 0;
+            if (val > 100) val = 100;
+            if (val < -100) val = -100;
+            activeCommissionPercent = val;
+            realizarConversion();
+          }
+          return;
+        }
+
+        if (['+', '-'].includes(key)) {
+          if (valActual === '') {
+            inputCustomCommission.value = key;
+          }
+          return;
+        }
+
+        if (key === '/' || key === '*') {
+          return; // ignorar operadores
+        }
+
+        if (key === ',' || key === '.') {
+          if (!valActual.includes(',') && !valActual.includes('.')) {
+            if (valActual === '' || valActual === '+' || valActual === '-') {
+              inputCustomCommission.value = valActual + '0,';
+            } else {
+              inputCustomCommission.value = valActual + ',';
+            }
+          }
+          return;
+        }
+
+        if (clearOnNextKey || valActual === '0') {
+          valActual = key;
+          clearOnNextKey = false;
+        } else {
+          valActual += key;
+        }
+
+        inputCustomCommission.value = valActual;
+        let valText = valActual.trim().replace(/,/g, '.');
+        let val = parseFloat(valText) || 0;
+        if (val > 100) val = 100;
+        if (val < -100) val = -100;
+        activeCommissionPercent = val;
+        realizarConversion();
+        return;
+      }
 
       // LÓGICA DE ESCRITURA EN EDICIÓN DE TASA
       if (isEditingRate) {
@@ -1792,16 +1865,36 @@ document.addEventListener('DOMContentLoaded', () => {
       const val = pill.dataset.value;
       if (val === 'custom') {
         customCommissionWrapper.classList.remove('hidden');
+        activeInput = inputCustomCommission;
+        document.getElementById('group-foreign').classList.remove('active');
+        document.getElementById('group-ves').classList.remove('active');
+        clearOnNextKey = true;
         inputCustomCommission.focus();
       } else {
         customCommissionWrapper.classList.add('hidden');
         activeCommissionPercent = parseFloat(val) || 0;
         realizarConversion();
+        const nuevoInput = !isReversed ? inputForeign : inputVes;
+        cambiarInputActivo(nuevoInput);
       }
     });
   });
 
   if (inputCustomCommission) {
+    inputCustomCommission.addEventListener('focus', () => {
+      activeInput = inputCustomCommission;
+      document.getElementById('group-foreign').classList.remove('active');
+      document.getElementById('group-ves').classList.remove('active');
+      clearOnNextKey = true;
+    });
+
+    inputCustomCommission.addEventListener('pointerdown', () => {
+      activeInput = inputCustomCommission;
+      document.getElementById('group-foreign').classList.remove('active');
+      document.getElementById('group-ves').classList.remove('active');
+      clearOnNextKey = true;
+    });
+
     // Escuchar cambios en el input de comisión personalizada
     inputCustomCommission.addEventListener('input', () => {
       let valText = inputCustomCommission.value.trim().replace(/,/g, '.');
