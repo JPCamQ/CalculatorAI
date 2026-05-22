@@ -1,0 +1,11 @@
+# Evitar que el navegador almacene en caché el Service Worker para permitir actualizaciones rápidas
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  Service-Worker-Allowed: /
+
+# Cabeceras de seguridad y optimización globales para todos los recursos
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-XSS-Protection: 1; mode=block

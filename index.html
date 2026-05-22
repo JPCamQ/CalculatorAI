@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Calculadora BCV & Binance - Conversor VES</title>
+
+  <!-- SEO Meta Tags -->
+  <meta name="description"
+    content="Calculadora rápida y moderna de USD, EUR y USDT a Bolívares (VES). Tasas oficiales del BCV y Binance P2P actualizadas en tiempo real. Funciona offline.">
+  <meta name="keywords"
+    content="calculadora bcv, bcv, dolar bcv, euro bcv, binance p2p, usdt ves, dolar hoy venezuela, bolivares dolar, conversor divisas venezuela">
+  <meta name="author" content="Antigravity Dev">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Calculadora BCV & Binance - Conversor VES">
+  <meta property="og:description"
+    content="Conversor rápido e inteligente de USD, EUR y USDT a Bolívares (VES) a tasa oficial. Instalable y funciona sin internet.">
+
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#10b981">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- iOS Meta Tags & Icons -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CalcDivisas">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="apple-touch-startup-image" href="assets/icon-512.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/icon-192.png">
+
+  <!-- Google Fonts (Outfit & Plus Jakarta Sans) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- SVG Sprite Sheet (Definiciones de banderas y logos 3D premium) -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="position: absolute; width: 0; height: 0; overflow: hidden;"
+    aria-hidden="true">
+    <defs>
+      <!-- Filtro de Sombra Arrojada para Relieves 3D -->
+      <filter id="icon-shadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="1.2" stdDeviation="1.0" flood-color="#000000" flood-opacity="0.6" />
+      </filter>
+
+      <!-- Brillo radial 3D (Efecto Glassmorphic esférico mejorado) -->
+      <radialGradient id="sphere-gloss" cx="30%" cy="30%" r="70%">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55" />
+        <stop offset="35%" stop-color="#ffffff" stop-opacity="0.12" />
+        <stop offset="70%" stop-color="#000000" stop-opacity="0" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.35" />
+      </radialGradient>
+
+      <!-- Gradiente Metálico de Oro -->
+      <linearGradient id="gold-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#fef08a" />
+        <stop offset="30%" stop-color="#facc15" />
+        <stop offset="70%" stop-color="#ca8a04" />
+        <stop offset="100%" stop-color="#854d0e" />
+      </linearGradient>
+
+      <!-- Gradiente Metálico de Plata/Cromo -->
+      <linearGradient id="silver-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ffffff" />
+        <stop offset="50%" stop-color="#cbd5e1" />
+        <stop offset="100%" stop-color="#475569" />
+      </linearGradient>
+
+      <!-- Gradiente Esférico USD (Verde dinero) -->
+      <radialGradient id="usd-bg-gradient" cx="30%" cy="30%" r="75%">
+        <stop offset="0%" stop-color="#22c55e" />
+        <stop offset="70%" stop-color="#16a34a" />
+        <stop offset="100%" stop-color="#14532d" />
+      </radialGradient>
+
+      <!-- Gradiente Esférico EUR (Azul real) -->
+      <radialGradient id="eur-bg-gradient" cx="30%" cy="30%" r="75%">
+        <stop offset="0%" stop-color="#3b82f6" />
+        <stop offset="70%" stop-color="#1d4ed8" />
+        <stop offset="100%" stop-color="#1e3a8a" />
+      </radialGradient>
+
+      <!-- Gradiente Esférico USDT (Tether cian) -->
+      <radialGradient id="usdt-bg-gradient-new" cx="30%" cy="30%" r="75%">
+        <stop offset="0%" stop-color="#00f5d4" />
+        <stop offset="50%" stop-color="#00b4d8" />
+        <stop offset="100%" stop-color="#0077b6" />
+      </radialGradient>
+
+      <!-- Gradiente Bandera Venezuela (Linear vertical tricolor) -->
+      <linearGradient id="ves-bg-gradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffcc00" />
+        <stop offset="33%" stop-color="#ffcc00" />
+        <stop offset="34%" stop-color="#00247d" />
+        <stop offset="66%" stop-color="#00247d" />
+        <stop offset="67%" stop-color="#cf142b" />
+        <stop offset="100%" stop-color="#cf142b" />
+      </linearGradient>
+
+      <!-- Geometría de estrella de Venezuela -->
+      <g id="star-ve">
+        <polygon
+          points="0,-0.45 0.13,-0.13 0.45,-0.13 0.2,0.06 0.28,0.38 0,0.17 -0.28,0.38 -0.2,0.06 -0.45,-0.13 -0.13,-0.13"
+          fill="#ffffff" />
+      </g>
+
+      <!-- Clip Path Circular global -->
+      <clipPath id="circle-clip">
+        <circle cx="12" cy="12" r="12" />
+      </clipPath>
+
+      <!-- Gema/Moneda: USD (Dólar estadounidense / Bandera USA circular) -->
+      <g id="flag-usd">
+        <g clip-path="url(#circle-clip)">
+          <!-- Fondo de rayas rojas y blancas -->
+          <rect width="24" height="24" fill="#bd3d44" />
+          <rect y="1.84" width="24" height="1.84" fill="#ffffff" />
+          <rect y="5.52" width="24" height="1.84" fill="#ffffff" />
+          <rect y="9.20" width="24" height="1.84" fill="#ffffff" />
+          <rect y="12.88" width="24" height="1.84" fill="#ffffff" />
+          <rect y="16.56" width="24" height="1.84" fill="#ffffff" />
+          <rect y="20.24" width="24" height="1.84" fill="#ffffff" />
+          <!-- Cantón azul -->
+          <rect width="11" height="12.88" fill="#192f5d" />
+          <!-- Estrellas simplificadas -->
+          <circle cx="2.2" cy="2.2" r="0.45" fill="#ffffff" />
+          <circle cx="5.2" cy="2.2" r="0.45" fill="#ffffff" />
+          <circle cx="8.2" cy="2.2" r="0.45" fill="#ffffff" />
+          <circle cx="3.7" cy="4.2" r="0.45" fill="#ffffff" />
+          <circle cx="6.7" cy="4.2" r="0.45" fill="#ffffff" />
+          <circle cx="2.2" cy="6.2" r="0.45" fill="#ffffff" />
+          <circle cx="5.2" cy="6.2" r="0.45" fill="#ffffff" />
+          <circle cx="8.2" cy="6.2" r="0.45" fill="#ffffff" />
+          <circle cx="3.7" cy="8.2" r="0.45" fill="#ffffff" />
+          <circle cx="6.7" cy="8.2" r="0.45" fill="#ffffff" />
+          <circle cx="2.2" cy="10.2" r="0.45" fill="#ffffff" />
+          <circle cx="5.2" cy="10.2" r="0.45" fill="#ffffff" />
+          <circle cx="8.2" cy="10.2" r="0.45" fill="#ffffff" />
+        </g>
+        <circle cx="12" cy="12" r="11.5" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1" fill="none" />
+      </g>
+
+      <!-- Gema/Moneda: EUR (Euro / Bandera UE circular) -->
+      <g id="flag-eur">
+        <g clip-path="url(#circle-clip)">
+          <!-- Fondo azul -->
+          <rect width="24" height="24" fill="#003399" />
+          <!-- Estrellas doradas dispuestas circularmente -->
+          <g transform="translate(12,12)">
+            <g id="star-eu-item" transform="translate(0, -6)">
+              <polygon points="0,-1.2 0.3,-0.3 1.2,-0.3 0.5,0.2 0.8,1 0,0.5 -0.8,1 -0.5,0.2 -1.2,-0.3 -0.3,-0.3"
+                fill="#ffcc00" />
+            </g>
+            <use href="#star-eu-item" transform="rotate(30)" />
+            <use href="#star-eu-item" transform="rotate(60)" />
+            <use href="#star-eu-item" transform="rotate(90)" />
+            <use href="#star-eu-item" transform="rotate(120)" />
+            <use href="#star-eu-item" transform="rotate(150)" />
+            <use href="#star-eu-item" transform="rotate(180)" />
+            <use href="#star-eu-item" transform="rotate(210)" />
+            <use href="#star-eu-item" transform="rotate(240)" />
+            <use href="#star-eu-item" transform="rotate(270)" />
+            <use href="#star-eu-item" transform="rotate(300)" />
+            <use href="#star-eu-item" transform="rotate(330)" />
+          </g>
+        </g>
+        <circle cx="12" cy="12" r="11.5" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1" fill="none" />
+      </g>
+
+      <!-- Gema/Moneda: VES (Bolívar / Bandera Venezuela circular) -->
+      <g id="flag-ves">
+        <g clip-path="url(#circle-clip)">
+          <!-- Amarillo -->
+          <rect width="24" height="8" fill="#ffcc00" />
+          <!-- Azul -->
+          <rect y="8" width="24" height="8" fill="#00247d" />
+          <!-- Rojo -->
+          <rect y="16" width="24" height="8" fill="#cf142b" />
+          <!-- Arco de 8 estrellas blancas -->
+          <g transform="translate(12, 12)">
+            <g id="star-ve-item" transform="translate(0, -2.5) scale(0.6)">
+              <polygon
+                points="0,-0.45 0.13,-0.13 0.45,-0.13 0.2,0.06 0.28,0.38 0,0.17 -0.28,0.38 -0.2,0.06 -0.45,-0.13 -0.13,-0.13"
+                fill="#ffffff" />
+            </g>
+            <use href="#star-ve-item" transform="rotate(-65)" />
+            <use href="#star-ve-item" transform="rotate(-47)" />
+            <use href="#star-ve-item" transform="rotate(-29)" />
+            <use href="#star-ve-item" transform="rotate(-11)" />
+            <use href="#star-ve-item" transform="rotate(11)" />
+            <use href="#star-ve-item" transform="rotate(29)" />
+            <use href="#star-ve-item" transform="rotate(47)" />
+            <use href="#star-ve-item" transform="rotate(65)" />
+          </g>
+        </g>
+        <circle cx="12" cy="12" r="11.5" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1" fill="none" />
+      </g>
+
+      <!-- Gema/Moneda: USDT (Tether circular) -->
+      <g id="flag-usdt">
+        <g clip-path="url(#circle-clip)">
+          <!-- Fondo turquesa -->
+          <circle cx="12" cy="12" r="12" fill="#26a17b" />
+          <!-- Símbolo Tether -->
+          <path
+            d="M8.22 7.747h7.56c.38 0 .69.31.69.69v1.38c0 .38-.31.69-.69.69h-2.43V13.8c0 .38-.31.69-.69.69h-1.38a.69.69 0 0 1-.69-.69v-3.296H8.22a.69.69 0 0 1-.69-.69V8.437c0-.38.31-.69.69-.69zm.81 7.82h5.94c.38 0 .69.31.69.69v.69c0 .38-.31.69-.69.69H9.03a.69.69 0 0 1-.69-.69v-.69c0-.38.31-.69.69-.69z"
+            fill="#ffffff" />
+        </g>
+        <circle cx="12" cy="12" r="11.5" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1" fill="none" />
+      </g>
+
+      <!-- Icono: Tasa Personalizada (Estrella dorada circular) -->
+      <g id="flag-custom">
+        <g clip-path="url(#circle-clip)">
+          <circle cx="12" cy="12" r="12" fill="#1c1c1e" />
+          <polygon points="12,5.5 13.8,9.5 18.2,10 14.8,13 15.8,17.2 12,15.2 8.2,17.2 9.2,13 5.8,10 10.2,9.5"
+            fill="#facc15" />
+        </g>
+        <circle cx="12" cy="12" r="11.5" stroke="rgba(255, 255, 255, 0.15)" stroke-width="1" fill="none" />
+      </g>
+  </svg>
+
+
+  <!-- Background Glows -->
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+
+  <div class="app-container">
+    <!-- Calculadora Card -->
+    <main class="calculator-container">
+      <div class="calculator-card">
+        <!-- Input Divisa Origen (Superior por defecto) -->
+        <div class="input-group" id="group-foreign">
+          <div class="input-header">
+            <div class="currency-selector-row" id="foreign-selector-row">
+              <button type="button" class="selector-btn active" data-currency="USD" aria-label="Seleccionar Dólar USD">
+                <span class="selector-flag">
+                  <svg viewBox="0 0 24 24" class="svg-icon">
+                    <use href="#flag-usd" />
+                  </svg>
+                </span>
+                <span class="selector-label">$ USD</span>
+              </button>
+              <button type="button" class="selector-btn" data-currency="EUR" aria-label="Seleccionar Euro EUR">
+                <span class="selector-flag">
+                  <svg viewBox="0 0 24 24" class="svg-icon">
+                    <use href="#flag-eur" />
+                  </svg>
+                </span>
+                <span class="selector-label">€ EUR</span>
+              </button>
+              <button type="button" class="selector-btn" data-currency="USDT" aria-label="Seleccionar Tether USDT">
+                <span class="selector-flag">
+                  <svg viewBox="0 0 24 24" class="svg-icon">
+                    <use href="#flag-usdt" />
+                  </svg>
+                </span>
+                <span class="selector-label">₮ USDT</span>
+              </button>
+              <button type="button" class="selector-btn" data-currency="Custom"
+                aria-label="Seleccionar Tasa Personalizada">
+                <span class="selector-flag">
+                  <svg viewBox="0 0 24 24" class="svg-icon">
+                    <use href="#flag-custom" />
+                  </svg>
+                </span>
+              </button>
+              <button type="button" class="selector-btn" data-currency="VES" aria-label="Seleccionar Bolívar VES">
+                <span class="selector-flag">
+                  <svg viewBox="0 0 24 24" class="svg-icon">
+                    <use href="#flag-ves" />
+                  </svg>
+                </span>
+                <span class="selector-label">Bs. VES</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="input-wrapper">
+            <span class="input-symbol" id="foreign-symbol">$</span>
+            <input type="text" id="input-foreign" inputmode="none" placeholder="1.00" autocomplete="off">
+            <!-- Copiar y compartir ocultos por CSS en input superior -->
+            <div class="input-actions">
+              <button class="input-action-btn copy-btn" id="copy-foreign-btn" aria-label="Copiar" title="Copiar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+              <button class="input-action-btn share-btn" id="share-foreign-btn" aria-label="Compartir"
+                title="Compartir">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                  <polyline points="16 6 12 2 8 6"></polyline>
+                  <line x1="12" y1="2" x2="12" y2="15"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botón Intercambio Divisoria -->
+        <div class="divider-container">
+          <div class="divider-line"></div>
+          <div class="swap-button-wrapper">
+            <button class="swap-icon" aria-label="Invertir conversión">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 5L9 19M9 19L5 15M9 19L13 15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M15 19L15 5M15 5L11 9M15 5L19 9" stroke="currentColor" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+          <div class="divider-line"></div>
+        </div>
+
+        <!-- Input Divisa Destino (Inferior por defecto) -->
+        <div class="input-group" id="group-ves">
+          <div class="input-header">
+            <div class="currency-selector-row" id="ves-selector-row">
+              <button type="button" class="selector-btn active" data-currency="VES"
+                aria-label="Seleccionar Bolívar VES">
+                <span class="selector-flag">
+                  <svg viewBox="0 0 24 24" class="svg-icon">
+                    <use href="#flag-ves" />
+                  </svg>
+                </span>
+                <span class="selector-label">Bs. VES</span>
+              </button>
+              <button type="button" class="selector-btn" data-currency="EUR" aria-label="Seleccionar Euro EUR">
+                <span class="selector-flag">
+                  <svg viewBox="0 0 24 24" class="svg-icon">
+                    <use href="#flag-eur" />
+                  </svg>
+                </span>
+                <span class="selector-label">€ EUR</span>
+              </button>
+              <button type="button" class="selector-btn" data-currency="USD" aria-label="Seleccionar Dólar USD">
+                <span class="selector-flag">
+                  <svg viewBox="0 0 24 24" class="svg-icon">
+                    <use href="#flag-usd" />
+                  </svg>
+                </span>
+                <span class="selector-label">$ USD</span>
+              </button>
+              <button type="button" class="selector-btn" data-currency="Custom"
+                aria-label="Seleccionar Tasa Personalizada">
+                <span class="selector-flag">
+                  <svg viewBox="0 0 24 24" class="svg-icon">
+                    <use href="#flag-custom" />
+                  </svg>
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div class="input-wrapper">
+            <span class="input-symbol" id="ves-symbol">Bs.</span>
+            <input type="text" id="input-ves" inputmode="none" placeholder="0.00" autocomplete="off">
+            <div class="input-actions">
+              <button class="input-action-btn copy-btn" id="copy-ves-btn" aria-label="Copiar" title="Copiar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+              <button class="input-action-btn share-btn" id="share-ves-btn" aria-label="Compartir" title="Compartir">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                  <polyline points="16 6 12 2 8 6"></polyline>
+                  <line x1="12" y1="2" x2="12" y2="15"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fila de Información de Tasa Centrada -->
+        <div id="rate-info-container" class="rate-info-container">
+          <div class="rate-calculation" id="rate-calc-text">$1 = Bs.523,67</div>
+          <div class="rate-update-time" id="rate-update-text">Actualizado 21 may. a las 8:00 p. m.</div>
+        </div>
+      </div>
+
+      <!-- Contenedor del Teclado Numérico Fijo -->
+      <div id="keypad-container" class="keypad-container">
+        <!-- Teclado Numérico Personalizado In-App de 4x4 -->
+        <section class="numeric-keypad">
+          <!-- Fila 1 -->
+          <button class="keypad-btn" data-key="1">1</button>
+          <button class="keypad-btn" data-key="2">2</button>
+          <button class="keypad-btn" data-key="3">3</button>
+          <button class="keypad-btn clear-key" data-key="C">C</button>
+
+          <!-- Fila 2 -->
+          <button class="keypad-btn" data-key="4">4</button>
+          <button class="keypad-btn" data-key="5">5</button>
+          <button class="keypad-btn" data-key="6">6</button>
+          <button class="keypad-btn op-key" data-key="+">+</button>
+
+          <!-- Fila 3 -->
+          <button class="keypad-btn" data-key="7">7</button>
+          <button class="keypad-btn" data-key="8">8</button>
+          <button class="keypad-btn" data-key="9">9</button>
+          <button class="keypad-btn op-key" data-key="-">-</button>
+
+          <!-- Fila 4 -->
+          <button class="keypad-btn decimal-key" data-key=",">,</button>
+          <button class="keypad-btn" data-key="0">0</button>
+          <button class="keypad-btn backspace-key" data-key="backspace" aria-label="Borrar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0 -2-2z"></path>
+              <line x1="18" y1="9" x2="12" y2="15"></line>
+              <line x1="12" y1="9" x2="18" y2="15"></line>
+            </svg>
+          </button>
+          <button class="keypad-btn check-key" data-key="check" aria-label="Confirmar">✓</button>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Bottom Sheet / Banner de Instalación para iOS -->
+  <div id="ios-install-sheet" class="ios-install-sheet hidden">
+    <div class="sheet-backdrop"></div>
+    <div class="sheet-content">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="app-icon-preview">
+          <img src="assets/icon-192.png" alt="App Icon">
+        </div>
+        <div class="app-info-preview">
+          <h3>Instalar Conversor VES</h3>
+          <p>Instala la aplicación en tu pantalla de inicio para acceso offline rápido.</p>
+        </div>
+        <button id="close-ios-sheet" class="close-sheet-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="sheet-steps">
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <p class="step-text">Toca el botón de <strong>Compartir</strong> en la barra inferior del navegador Safari.
+          </p>
+          <div class="step-icon-visual">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#007aff" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" class="safari-share-icon">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+              <polyline points="16 6 12 2 8 6"></polyline>
+              <line x1="12" y1="2" x2="12" y2="15"></line>
+            </svg>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <p class="step-text">Desplázate hacia abajo y selecciona la opción <strong>Añadir a pantalla de
+              inicio</strong>.</p>
+          <div class="step-icon-visual">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" class="safari-add-icon">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botón Flotante / Banner de Instalación para Android/Chrome -->
+  <div id="android-install-prompt" class="android-install-prompt hidden">
+    <div class="prompt-icon">
+      <img src="assets/icon-192.png" alt="App Icon">
+    </div>
+    <div class="prompt-info">
+      <h4>¿Usar como App móvil?</h4>
+      <p>Instala y accede offline en un clic</p>
+    </div>
+    <div class="prompt-actions">
+      <button id="btn-cancel-install" class="btn-text">Ahora no</button>
+      <button id="btn-trigger-install" class="btn-primary-install">Instalar</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
