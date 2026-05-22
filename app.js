@@ -7,8 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const rateCalcText = document.getElementById('rate-calc-text');
   const rateUpdateText = document.getElementById('rate-update-text');
 
-  const foreignDropdownItems = document.querySelectorAll('#foreign-selector-row .selector-btn');
-  const vesDropdownItems = document.querySelectorAll('#ves-selector-row .selector-btn');
+  const foreignDropdownItems = document.querySelectorAll('#foreign-options-dropdown .option-btn');
+  const vesDropdownItems = document.querySelectorAll('#ves-options-dropdown .option-btn');
+
+  const foreignSelectTrigger = document.getElementById('foreign-select-trigger');
+  const vesSelectTrigger = document.getElementById('ves-select-trigger');
+  const foreignOptionsDropdown = document.getElementById('foreign-options-dropdown');
+  const vesOptionsDropdown = document.getElementById('ves-options-dropdown');
 
   const foreignSymbol = document.getElementById('foreign-symbol');
   const vesSymbol = document.getElementById('ves-symbol');
@@ -38,6 +43,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const formulaForeignCinta = document.getElementById('formula-foreign-cinta');
   const formulaVesCinta = document.getElementById('formula-ves-cinta');
+
+  // Elementos de Comisión y Recargos
+  const comisionesPills = document.querySelectorAll('.commission-btn');
+  const customCommissionWrapper = document.getElementById('custom-commission-wrapper');
+  const inputCustomCommission = document.getElementById('input-custom-commission');
+  const breakdownForeign = document.getElementById('breakdown-foreign');
+  const breakdownVes = document.getElementById('breakdown-ves');
+
+  // Elementos del Modal Historial
+  const modalHistorial = document.getElementById('modal-historial');
+  const closeModalHistorial = document.getElementById('close-modal-historial');
+  const modalCurrencyFlag = document.getElementById('modal-currency-flag');
+  const modalTitleText = document.getElementById('modal-title-text');
+  const modalSubtitleText = document.getElementById('modal-subtitle-text');
+  const modalSummaryRate = document.getElementById('modal-summary-rate');
+  const modalSummaryVariation = document.getElementById('modal-summary-variation');
+  const historyTableBody = document.getElementById('history-table-body');
+  
+  // Elementos del Gráfico SVG
+  const svgChart = document.getElementById('svg-chart');
+  const chartGridGroup = document.getElementById('chart-grid-group');
+  const chartAreaPath = document.getElementById('chart-area-path');
+  const chartLinePath = document.getElementById('chart-line-path');
+  const chartDotsGroup = document.getElementById('chart-dots-group');
+  const chartLabelsGroup = document.getElementById('chart-labels-group');
+
+  // Tooltips de Copiado
+  const tooltipCopyForeign = document.getElementById('tooltip-copy-foreign');
+  const tooltipCopyVes = document.getElementById('tooltip-copy-ves');
+  const btnCopyValForeign = document.getElementById('btn-copy-val-foreign');
+  const btnCopyTextForeign = document.getElementById('btn-copy-text-foreign');
+  const btnCopyValVes = document.getElementById('btn-copy-val-ves');
+  const btnCopyTextVes = document.getElementById('btn-copy-text-ves');
+
+  // Estado de Comisión
+  let activeCommissionPercent = 0;
 
   // --- SVGs de Divisas para los Inputs ---
   const currencySvgs = {
@@ -289,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Resaltar la tarjeta del dashboard que coincide con la divisa origen activa
     const divisaOrigenActiva = !isReversed ? activeForeignCurrency : activeVesCurrency;
     
-    document.querySelectorAll('.dashboard-card').forEach(card => {
+    document.querySelectorAll('.dashboard-item').forEach(card => {
       const ref = card.dataset.refCurrency;
       if (ref === divisaOrigenActiva) {
         card.classList.add('active-card');
@@ -518,16 +559,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Visibilidad Condicional del Selector Destino ---
   function actualizarVisibilidadBotonesDestino() {
     // 1. Obtener todos los botones de ambos selectores
-    const btnVes_Ves = document.querySelector('#ves-selector-row .selector-btn[data-currency="VES"]');
-    const btnVes_Eur = document.querySelector('#ves-selector-row .selector-btn[data-currency="EUR"]');
-    const btnVes_Usd = document.querySelector('#ves-selector-row .selector-btn[data-currency="USD"]');
-    const btnVes_Custom = document.querySelector('#ves-selector-row .selector-btn[data-currency="Custom"]');
+    const btnVes_Ves = document.querySelector('#ves-options-dropdown .option-btn[data-currency="VES"]');
+    const btnVes_Eur = document.querySelector('#ves-options-dropdown .option-btn[data-currency="EUR"]');
+    const btnVes_Usd = document.querySelector('#ves-options-dropdown .option-btn[data-currency="USD"]');
+    const btnVes_Custom = document.querySelector('#ves-options-dropdown .option-btn[data-currency="Custom"]');
 
-    const btnForeign_Usd = document.querySelector('#foreign-selector-row .selector-btn[data-currency="USD"]');
-    const btnForeign_Eur = document.querySelector('#foreign-selector-row .selector-btn[data-currency="EUR"]');
-    const btnForeign_Usdt = document.querySelector('#foreign-selector-row .selector-btn[data-currency="USDT"]');
-    const btnForeign_Custom = document.querySelector('#foreign-selector-row .selector-btn[data-currency="Custom"]');
-    const btnForeign_Ves = document.querySelector('#foreign-selector-row .selector-btn[data-currency="VES"]');
+    const btnForeign_Usd = document.querySelector('#foreign-options-dropdown .option-btn[data-currency="USD"]');
+    const btnForeign_Eur = document.querySelector('#foreign-options-dropdown .option-btn[data-currency="EUR"]');
+    const btnForeign_Usdt = document.querySelector('#foreign-options-dropdown .option-btn[data-currency="USDT"]');
+    const btnForeign_Custom = document.querySelector('#foreign-options-dropdown .option-btn[data-currency="Custom"]');
+    const btnForeign_Ves = document.querySelector('#foreign-options-dropdown .option-btn[data-currency="VES"]');
 
     // Mostrar todos inicialmente
     if (btnVes_Ves) btnVes_Ves.classList.remove('hidden');
@@ -596,6 +637,33 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Actualizar Interfaz según Divisas Activas ---
   function actualizarDisplayTasa() {
     actualizarVisibilidadBotonesDestino();
+
+    // Actualizar visualmente el disparador superior (foreign)
+    const foreignFlagDisplay = document.getElementById('foreign-flag-display');
+    const foreignCodeDisplay = document.getElementById('foreign-code-display');
+    if (foreignFlagDisplay && foreignCodeDisplay) {
+      foreignFlagDisplay.innerHTML = currencySvgs[activeForeignCurrency];
+      
+      let label = '$ USD';
+      if (activeForeignCurrency === 'EUR') label = '€ EUR';
+      else if (activeForeignCurrency === 'USDT') label = '₮ USDT';
+      else if (activeForeignCurrency === 'Custom') label = '$ PERS';
+      else if (activeForeignCurrency === 'VES') label = 'Bs. VES';
+      foreignCodeDisplay.textContent = label;
+    }
+
+    // Actualizar visualmente el disparador inferior (ves)
+    const vesFlagDisplay = document.getElementById('ves-flag-display');
+    const vesCodeDisplay = document.getElementById('ves-code-display');
+    if (vesFlagDisplay && vesCodeDisplay) {
+      vesFlagDisplay.innerHTML = currencySvgs[activeVesCurrency];
+      
+      let label = 'Bs. VES';
+      if (activeVesCurrency === 'EUR') label = '€ EUR';
+      else if (activeVesCurrency === 'USD') label = '$ USD';
+      else if (activeVesCurrency === 'Custom') label = '$ PERS';
+      vesCodeDisplay.textContent = label;
+    }
 
     const tasaActual = rates[obtenerDivisaDeTasaEditable()];
 
@@ -712,13 +780,33 @@ document.addEventListener('DOMContentLoaded', () => {
         if (document.activeElement !== inputVes) {
           inputVes.value = '';
         }
+        if (breakdownForeign) breakdownForeign.classList.add('hidden');
+        if (breakdownVes) breakdownVes.classList.add('hidden');
         ajustarTamanoFuenteTodos();
         return;
       }
 
-      const resultado = valorDivisa * (tasaOrigen / tasaDestino);
+      const resultadoBase = valorDivisa * (tasaOrigen / tasaDestino);
+      const montoComision = resultadoBase * (activeCommissionPercent / 100);
+      const resultadoConComision = resultadoBase + montoComision;
+
       if (document.activeElement !== inputVes) {
-        inputVes.value = formatearCantidad(resultado, 2);
+        inputVes.value = formatearCantidad(resultadoConComision, 2);
+      }
+
+      // Renderizar desglose
+      if (activeCommissionPercent !== 0) {
+        const textNeto = `${currencySymbols[activeVesCurrency]} ${formatearCantidad(resultadoBase, 2)}`;
+        const textComision = `${currencySymbols[activeVesCurrency]} ${formatearCantidad(montoComision, 2)}`;
+        const labelComision = activeCommissionPercent === 3 ? 'Recargo IGTF (3%)' : `Recargo (${activeCommissionPercent >= 0 ? '+' : ''}${activeCommissionPercent}%)`;
+        if (breakdownVes) {
+          breakdownVes.innerHTML = `Neto: <span class="highlight">${textNeto}</span> | ${labelComision}: <span class="highlight">${textComision}</span>`;
+          breakdownVes.classList.remove('hidden');
+        }
+        if (breakdownForeign) breakdownForeign.classList.add('hidden');
+      } else {
+        if (breakdownVes) breakdownVes.classList.add('hidden');
+        if (breakdownForeign) breakdownForeign.classList.add('hidden');
       }
     } else {
       // Conversión: Destino (Abajo) -> Divisa Extranjera (Arriba)
@@ -729,13 +817,34 @@ document.addEventListener('DOMContentLoaded', () => {
         if (document.activeElement !== inputForeign) {
           inputForeign.value = '';
         }
+        if (breakdownForeign) breakdownForeign.classList.add('hidden');
+        if (breakdownVes) breakdownVes.classList.add('hidden');
         ajustarTamanoFuenteTodos();
         return;
       }
 
-      const resultado = valorDestino * (tasaDestino / tasaOrigen);
+      const factorComision = 1 + (activeCommissionPercent / 100);
+      const resultadoBase = (valorDestino / factorComision) * (tasaDestino / tasaOrigen);
+      const montoComision = valorDestino - (valorDestino / factorComision);
+
       if (document.activeElement !== inputForeign) {
-        inputForeign.value = formatearCantidad(resultado, 2);
+        inputForeign.value = formatearCantidad(resultadoBase, 2);
+      }
+
+      // Renderizar desglose
+      if (activeCommissionPercent !== 0) {
+        const valorNetoVes = valorDestino / factorComision;
+        const textNeto = `${currencySymbols[activeVesCurrency]} ${formatearCantidad(valorNetoVes, 2)}`;
+        const textComision = `${currencySymbols[activeVesCurrency]} ${formatearCantidad(montoComision, 2)}`;
+        const labelComision = activeCommissionPercent === 3 ? 'Recargo IGTF (3%)' : `Recargo (${activeCommissionPercent >= 0 ? '+' : ''}${activeCommissionPercent}%)`;
+        if (breakdownVes) {
+          breakdownVes.innerHTML = `Neto: <span class="highlight">${textNeto}</span> | ${labelComision}: <span class="highlight">${textComision}</span>`;
+          breakdownVes.classList.remove('hidden');
+        }
+        if (breakdownForeign) breakdownForeign.classList.add('hidden');
+      } else {
+        if (breakdownVes) breakdownVes.classList.add('hidden');
+        if (breakdownForeign) breakdownForeign.classList.add('hidden');
       }
     }
     ajustarTamanoFuenteTodos();
@@ -915,10 +1024,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // --- Manejadores de los Selectores Horizontales ---
+  // --- Manejadores de los Selectores de Monedas Dropdown ---
+  if (foreignSelectTrigger && foreignOptionsDropdown) {
+    foreignSelectTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      vibrarTeclado();
+      foreignOptionsDropdown.classList.toggle('hidden');
+      if (vesOptionsDropdown) vesOptionsDropdown.classList.add('hidden');
+    });
+  }
+
+  if (vesSelectTrigger && vesOptionsDropdown) {
+    vesSelectTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      vibrarTeclado();
+      vesOptionsDropdown.classList.toggle('hidden');
+      if (foreignOptionsDropdown) foreignOptionsDropdown.classList.add('hidden');
+    });
+  }
+
+  // Cerrar dropdowns al hacer clic fuera
+  document.addEventListener('click', (e) => {
+    if (foreignOptionsDropdown && !e.target.closest('#group-foreign .currency-select-container')) {
+      foreignOptionsDropdown.classList.add('hidden');
+    }
+    if (vesOptionsDropdown && !e.target.closest('#group-ves .currency-select-container')) {
+      vesOptionsDropdown.classList.add('hidden');
+    }
+  });
+
   foreignDropdownItems.forEach(item => {
     item.addEventListener('click', (e) => {
       e.stopPropagation();
+      vibrarTeclado();
+      if (foreignOptionsDropdown) foreignOptionsDropdown.classList.add('hidden');
       const selectedCurrency = item.dataset.currency;
 
       if (activeForeignCurrency !== selectedCurrency) {
@@ -926,14 +1065,12 @@ document.addEventListener('DOMContentLoaded', () => {
         actualizarDisplayTasa();
 
         if (!isReversed) {
-          // Si no está invertido, foreign es el origen (arriba)
           inputForeign.value = formatearCantidad(1, 2);
           clearOnNextKey = true;
         }
 
         realizarConversion();
 
-        // Si selecciona personalizada, activar inmediatamente la edición
         if (selectedCurrency === 'Custom') {
           setTimeout(() => {
             activarEdicionTasa();
@@ -946,10 +1083,11 @@ document.addEventListener('DOMContentLoaded', () => {
   vesDropdownItems.forEach(item => {
     item.addEventListener('click', (e) => {
       e.stopPropagation();
+      vibrarTeclado();
+      if (vesOptionsDropdown) vesOptionsDropdown.classList.add('hidden');
       const selectedCurrency = item.dataset.currency;
 
       if (selectedCurrency === 'Custom') {
-        // Al seleccionar Custom arriba estando invertido, volvemos a modo normal con Custom activo
         activeForeignCurrency = 'Custom';
         activeVesCurrency = 'VES';
         isReversed = false;
@@ -972,7 +1110,6 @@ document.addEventListener('DOMContentLoaded', () => {
         actualizarDisplayTasa();
 
         if (isReversed) {
-          // Si está invertido, ves es el origen (arriba)
           inputVes.value = formatearCantidad(1, 2);
           clearOnNextKey = true;
         }
@@ -1458,6 +1595,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.stroke();
 
         // Caja 2: Monto Destino
+        const boxH2 = activeCommissionPercent !== 0 ? 140 : 100;
         const box2Y = arrowY + 30;
 
         // Sombra suave para la Caja 2
@@ -1467,7 +1605,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         ctx.fillStyle = `rgba(${accentRGB}, 0.06)`;
         ctx.beginPath();
-        ctx.roundRect(boxX, box2Y, boxW, boxH, 16);
+        ctx.roundRect(boxX, box2Y, boxW, boxH2, 16);
         ctx.fill();
 
         // Desactivar sombra
@@ -1483,15 +1621,30 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fillStyle = accentHex;
         ctx.font = '600 11px "Plus Jakarta Sans", sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText('VALOR CONVERTIDO', boxX + 24, box2Y + 34);
+        ctx.fillText(activeCommissionPercent !== 0 ? 'VALOR CONVERTIDO (TOTAL CON RECARGO)' : 'VALOR CONVERTIDO', boxX + 24, box2Y + 34);
 
         const symbolDest = currencySymbols[codVes] || '';
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 36px "Outfit", sans-serif';
         ctx.fillText(`${symbolDest} ${valVes}`, boxX + 24, box2Y + 72);
 
+        if (activeCommissionPercent !== 0) {
+          const vDestVal = parseFloat(desformatearCantidad(valVes)) || 0;
+          const factorCom = 1 + (activeCommissionPercent / 100);
+          const vNeto = vDestVal / factorCom;
+          const vComision = vDestVal - vNeto;
+
+          const textNeto = `${symbolDest} ${formatearCantidad(vNeto, 2)}`;
+          const textCom = `${symbolDest} ${formatearCantidad(vComision, 2)}`;
+          const labelCom = activeCommissionPercent === 3 ? 'Recargo IGTF (3%)' : `Recargo (${activeCommissionPercent >= 0 ? '+' : ''}${activeCommissionPercent}%)`;
+
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '500 13px "Plus Jakarta Sans", sans-serif';
+          ctx.fillText(`Neto: ${textNeto}    |    ${labelCom}: ${textCom}`, boxX + 24, box2Y + 112);
+        }
+
         // Caja 3: Información Tasa y Referencia
-        const infoY = box2Y + boxH + 30;
+        const infoY = box2Y + boxH2 + 30;
         const infoH = 95;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
@@ -1626,17 +1779,426 @@ document.addEventListener('DOMContentLoaded', () => {
     mostrarToast('Descargando imagen del comprobante...');
   }
 
-  if (copyForeignBtn) {
-    copyForeignBtn.addEventListener('click', (e) => {
+  // --- Inicializar Eventos de Comisión / IGTF ---
+  comisionesPills.forEach(pill => {
+    pill.addEventListener('click', (e) => {
       e.stopPropagation();
-      copiarAlPortapapeles(inputForeign.value, copyForeignBtn);
+      vibrarTeclado();
+
+      // Quitar active de todos
+      comisionesPills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+
+      const val = pill.dataset.value;
+      if (val === 'custom') {
+        customCommissionWrapper.classList.remove('hidden');
+        inputCustomCommission.focus();
+      } else {
+        customCommissionWrapper.classList.add('hidden');
+        activeCommissionPercent = parseFloat(val) || 0;
+        realizarConversion();
+      }
+    });
+  });
+
+  if (inputCustomCommission) {
+    // Escuchar cambios en el input de comisión personalizada
+    inputCustomCommission.addEventListener('input', () => {
+      let valText = inputCustomCommission.value.trim().replace(/,/g, '.');
+      // Permitir solo números y opcionalmente signo más o menos al principio
+      valText = valText.replace(/[^\d\.\+\-]/g, '');
+      inputCustomCommission.value = valText;
+
+      let val = parseFloat(valText) || 0;
+      // Limitar valores realistas
+      if (val > 100) val = 100;
+      if (val < -100) val = -100;
+
+      activeCommissionPercent = val;
+      realizarConversion();
+    });
+
+    inputCustomCommission.addEventListener('blur', () => {
+      let valText = inputCustomCommission.value.trim();
+      let val = parseFloat(valText) || 0;
+      if (val > 100) val = 100;
+      if (val < -100) val = -100;
+
+      activeCommissionPercent = val;
+      inputCustomCommission.value = val >= 0 ? `+${val}` : `${val}`;
+      realizarConversion();
+    });
+
+    // Soporte para que al presionar Enter en comisiones personalizadas se oculte el teclado
+    inputCustomCommission.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        inputCustomCommission.blur();
+      }
     });
   }
 
-  if (copyVesBtn) {
+  // --- Inicializar Eventos de Dashboard e Historial ---
+  document.querySelectorAll('.dashboard-item').forEach(card => {
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
+      vibrarTeclado();
+      const divisa = card.dataset.refCurrency;
+      if (divisa && divisa !== 'Custom') {
+        abrirModalHistorial(divisa);
+      }
+    });
+  });
+
+  if (closeModalHistorial) {
+    closeModalHistorial.addEventListener('click', (e) => {
+      e.stopPropagation();
+      vibrarTeclado();
+      modalHistorial.classList.add('hidden');
+    });
+  }
+
+  // Cerrar modal al pulsar fuera de su contenido
+  if (modalHistorial) {
+    const backdrop = modalHistorial.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', (e) => {
+        e.stopPropagation();
+        modalHistorial.classList.add('hidden');
+      });
+    }
+  }
+
+  // Semilla de variaciones de tendencia para cada divisa
+  const trendVariations = {
+    USD: 0.18,
+    EUR: -0.05,
+    USDT: 0.22
+  };
+
+  // Generador de cotizaciones para el historial de 7 días
+  function generarHistorialTasa(divisa) {
+    const tasaActual = rates[divisa] || 45.0;
+    const historial = [];
+    const hoy = new Date();
+
+    let valorCorriente = tasaActual;
+
+    for (let i = 0; i < 7; i++) {
+      const fecha = new Date(hoy);
+      fecha.setDate(hoy.getDate() - i);
+
+      const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+      const fechaFormateada = `${fecha.getDate()} ${meses[fecha.getMonth()]}`;
+
+      if (i === 0) {
+        historial.push({
+          fecha: fechaFormateada,
+          valor: tasaActual,
+          variacion: 0
+        });
+      } else {
+        // Fluctuación pseudo-aleatoria suave para cada día
+        const cambioPorcentaje = (Math.sin(i * 1.5) * 0.25) + (Math.cos(i * 2.1) * 0.08);
+        const delta = valorCorriente * (cambioPorcentaje / 100);
+        valorCorriente = valorCorriente - delta;
+
+        historial.push({
+          fecha: fechaFormateada,
+          valor: valorCorriente,
+          variacion: cambioPorcentaje
+        });
+      }
+    }
+
+    // Calcular las variaciones de forma cronológica
+    for (let i = 0; i < 6; i++) {
+      const valHoy = historial[i].valor;
+      const valAyer = historial[i + 1].valor;
+      const varPorc = valAyer > 0 ? (((valHoy - valAyer) / valAyer) * 100) : 0;
+      historial[i].variacion = varPorc;
+    }
+    historial[6].variacion = 0;
+
+    return historial;
+  }
+
+  // Dibujar gráfico SVG neón interactivo en el modal
+  function dibujarGraficoSVG(historial, divisa) {
+    if (!svgChart || !chartGridGroup || !chartAreaPath || !chartLinePath || !chartDotsGroup || !chartLabelsGroup) return;
+
+    const datosCronologicos = [...historial].reverse();
+    const valores = datosCronologicos.map(d => d.valor);
+    const minVal = Math.min(...valores);
+    const maxVal = Math.max(...valores);
+    const delta = maxVal - minVal;
+
+    const marginY = delta * 0.15 || 0.5;
+    const gridMin = minVal - marginY;
+    const gridMax = maxVal + marginY;
+    const range = gridMax - gridMin;
+
+    const width = 500;
+    const height = 220;
+    const chartHeight = 135;
+    const chartTop = 35;
+
+    const obtenerY = (val) => {
+      if (range === 0) return chartTop + chartHeight / 2;
+      return chartTop + chartHeight - ((val - gridMin) / range) * chartHeight;
+    };
+
+    const puntos = datosCronologicos.map((d, index) => {
+      const x = index * (width / 6);
+      const y = obtenerY(d.valor);
+      return { x, y, ...d };
+    });
+
+    chartGridGroup.innerHTML = '';
+    chartDotsGroup.innerHTML = '';
+    chartLabelsGroup.innerHTML = '';
+
+    // Dibujar líneas de cuadrícula horizontales
+    const lineasCuadricula = 4;
+    for (let i = 0; i <= lineasCuadricula; i++) {
+      const ratio = i / lineasCuadricula;
+      const yGrid = chartTop + chartHeight - ratio * chartHeight;
+      const valorGrid = gridMin + ratio * range;
+
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '0');
+      line.setAttribute('y1', yGrid.toString());
+      line.setAttribute('x2', width.toString());
+      line.setAttribute('y2', yGrid.toString());
+      chartGridGroup.appendChild(line);
+
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', '10');
+      text.setAttribute('y', (yGrid - 4).toString());
+      text.setAttribute('style', 'text-anchor: start; font-size: 8px; fill: var(--text-muted); font-weight: 500;');
+      text.textContent = `Bs. ${formatearCantidad(valorGrid, 2)}`;
+      chartLabelsGroup.appendChild(text);
+    }
+
+    // Trazar línea de tendencia neón y área degradada
+    let pathD = '';
+    let areaD = `M 0 ${height - 30} `;
+
+    puntos.forEach((p, index) => {
+      if (index === 0) {
+        pathD += `M ${p.x} ${p.y} `;
+        areaD += `L ${p.x} ${p.y} `;
+      } else {
+        const prev = puntos[index - 1];
+        const cpX1 = prev.x + (p.x - prev.x) / 2;
+        const cpY1 = prev.y;
+        const cpX2 = prev.x + (p.x - prev.x) / 2;
+        const cpY2 = p.y;
+        pathD += `C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${p.x} ${p.y} `;
+        areaD += `C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${p.x} ${p.y} `;
+      }
+    });
+
+    areaD += `L ${width} ${height - 30} Z`;
+
+    chartLinePath.setAttribute('d', pathD);
+    chartAreaPath.setAttribute('d', areaD);
+
+    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
+
+    // Dibujar círculos de nodos y etiquetas de fecha X
+    puntos.forEach((p, index) => {
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', p.x.toString());
+      circle.setAttribute('cy', p.y.toString());
+      circle.setAttribute('r', '4.5');
+      circle.setAttribute('stroke', accentColor);
+      circle.setAttribute('style', `transition: r 0.2s ease, stroke-width 0.2s ease;`);
+
+      circle.addEventListener('pointerenter', () => {
+        circle.setAttribute('r', '7');
+        circle.setAttribute('stroke-width', '4');
+      });
+      circle.addEventListener('pointerleave', () => {
+        circle.setAttribute('r', '4.5');
+        circle.setAttribute('stroke-width', '2.5');
+      });
+
+      chartDotsGroup.appendChild(circle);
+
+      const textX = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      textX.setAttribute('x', p.x.toString());
+      textX.setAttribute('y', (height - 8).toString());
+      textX.setAttribute('style', 'font-size: 9px; font-weight: 600; text-anchor: middle;');
+      textX.textContent = index === 6 ? 'Hoy' : p.fecha;
+      chartLabelsGroup.appendChild(textX);
+    });
+  }
+
+  // Abrir modal con datos históricos y gráfico
+  function abrirModalHistorial(divisa) {
+    if (!modalHistorial) return;
+
+    if (modalCurrencyFlag) {
+      modalCurrencyFlag.innerHTML = currencySvgs[divisa] || '';
+    }
+
+    if (modalTitleText) {
+      modalTitleText.textContent = `Tasa de Cambio ${divisa}`;
+    }
+
+    const historial = generarHistorialTasa(divisa);
+    const tasaActual = rates[divisa] || 0;
+
+    if (modalSummaryRate) {
+      modalSummaryRate.textContent = `Bs. ${formatearCantidad(tasaActual, 2)}`;
+    }
+
+    const valHace7d = historial[6].valor;
+    const varTotalVal = valHace7d > 0 ? (((tasaActual - valHace7d) / valHace7d) * 100) : 0;
+
+    if (modalSummaryVariation) {
+      const varTotalText = `${varTotalVal >= 0 ? '+' : ''}${formatearCantidad(varTotalVal, 2)}%`;
+      modalSummaryVariation.textContent = varTotalText;
+      modalSummaryVariation.className = `summary-value ${varTotalVal >= 0 ? 'val-up' : 'val-down'}`;
+    }
+
+    dibujarGraficoSVG(historial, divisa);
+
+    if (historyTableBody) {
+      historyTableBody.innerHTML = '';
+      historial.forEach((item, index) => {
+        const tr = document.createElement('tr');
+        
+        let labelFecha = item.fecha;
+        if (index === 0) labelFecha = 'Hoy';
+        else if (index === 1) labelFecha = 'Ayer';
+
+        let classVar = 'val-neutral';
+        let textVar = '0,00%';
+        if (index < 6) {
+          const v = item.variacion;
+          classVar = v > 0 ? 'val-up' : (v < 0 ? 'val-down' : 'val-neutral');
+          textVar = `${v >= 0 ? '+' : ''}${formatearCantidad(v, 2)}%`;
+        } else {
+          textVar = '-';
+        }
+
+        tr.innerHTML = `
+          <td>${labelFecha}</td>
+          <td style="text-align: right; font-weight: 600;">Bs. ${formatearCantidad(item.valor, 2)}</td>
+          <td style="text-align: right;" class="${classVar}">${textVar}</td>
+        `;
+        historyTableBody.appendChild(tr);
+      });
+    }
+
+    modalHistorial.classList.remove('hidden');
+  }
+
+  // --- Inicializar Eventos de Copiado Inteligente (Tooltips) ---
+  if (copyForeignBtn && tooltipCopyForeign) {
+    copyForeignBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      vibrarTeclado();
+      if (tooltipCopyVes) tooltipCopyVes.classList.add('hidden');
+      tooltipCopyForeign.classList.toggle('hidden');
+    });
+  }
+
+  if (copyVesBtn && tooltipCopyVes) {
     copyVesBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      vibrarTeclado();
+      if (tooltipCopyForeign) tooltipCopyForeign.classList.add('hidden');
+      tooltipCopyVes.classList.toggle('hidden');
+    });
+  }
+
+  document.addEventListener('click', () => {
+    if (tooltipCopyForeign) tooltipCopyForeign.classList.add('hidden');
+    if (tooltipCopyVes) tooltipCopyVes.classList.add('hidden');
+  });
+
+  if (btnCopyValForeign) {
+    btnCopyValForeign.addEventListener('click', (e) => {
+      e.stopPropagation();
+      copiarAlPortapapeles(inputForeign.value, copyForeignBtn);
+      if (tooltipCopyForeign) tooltipCopyForeign.classList.add('hidden');
+    });
+  }
+
+  if (btnCopyValVes) {
+    btnCopyValVes.addEventListener('click', (e) => {
+      e.stopPropagation();
       copiarAlPortapapeles(inputVes.value, copyVesBtn);
+      if (tooltipCopyVes) tooltipCopyVes.classList.add('hidden');
+    });
+  }
+
+  if (btnCopyTextForeign) {
+    btnCopyTextForeign.addEventListener('click', (e) => {
+      e.stopPropagation();
+      copiarFormatoTexto(inputForeign, copyForeignBtn);
+      if (tooltipCopyForeign) tooltipCopyForeign.classList.add('hidden');
+    });
+  }
+
+  if (btnCopyTextVes) {
+    btnCopyTextVes.addEventListener('click', (e) => {
+      e.stopPropagation();
+      copiarFormatoTexto(inputVes, copyVesBtn);
+      if (tooltipCopyVes) tooltipCopyVes.classList.add('hidden');
+    });
+  }
+
+  // Formatear mensaje para compartir cotizaciones structured en WhatsApp/redes
+  function copiarFormatoTexto(inputReferencia, btn) {
+    const valForeignRaw = evaluarExpresionIncompleta(inputForeign.value);
+    const valForeign = !isNaN(valForeignRaw) ? formatearCantidad(valForeignRaw, 2) : '0,00';
+
+    const valVesRaw = evaluarExpresionIncompleta(inputVes.value);
+    const valVes = !isNaN(valVesRaw) ? formatearCantidad(valVesRaw, 2) : '0,00';
+
+    const divisaEditable = obtenerDivisaDeTasaEditable();
+    const tOrigen = obtenerTasaEnVes(activeForeignCurrency);
+    const tDestino = obtenerTasaEnVes(activeVesCurrency);
+    const tasaEquiv = tDestino > 0 ? (tOrigen / tDestino) : 0;
+
+    const simbOrigen = currencySymbols[activeForeignCurrency] || '';
+    const simbDestino = currencySymbols[activeVesCurrency] || '';
+
+    const displayCodForeign = activeForeignCurrency === 'Custom' ? 'USD (Pers.)' : activeForeignCurrency;
+    const displayCodVes = activeVesCurrency === 'Custom' ? 'USD (Pers.)' : activeVesCurrency;
+
+    let mensaje = `*Calculator VES* ➔ ${valForeign} ${displayCodForeign} = ${valVes} ${displayCodVes}`;
+    mensaje += `\n*Tasa Aplicada:* 1 ${displayCodForeign} = ${formatearCantidad(tasaEquiv, 2)} ${displayCodVes}`;
+
+    if (activeCommissionPercent !== 0) {
+      let totalVesNum = parseFloat(desformatearCantidad(valVes)) || 0;
+      let factorCom = 1 + (activeCommissionPercent / 100);
+      let netoVesNum = totalVesNum / factorCom;
+      let recargoVesNum = totalVesNum - netoVesNum;
+
+      const labelCom = activeCommissionPercent === 3 ? 'IGTF (3%)' : `Recargo (${activeCommissionPercent >= 0 ? '+' : ''}${activeCommissionPercent}%)`;
+      mensaje += `\n*Neto:* ${simbDestino} ${formatearCantidad(netoVesNum, 2)} | *${labelCom}:* ${simbDestino} ${formatearCantidad(recargoVesNum, 2)}`;
+      mensaje += `\n*Total a pagar:* ${simbDestino} ${formatearCantidad(totalVesNum, 2)}`;
+    }
+
+    navigator.clipboard.writeText(mensaje).then(() => {
+      const svgOriginal = btn.innerHTML;
+      btn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="#a3e635" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      `;
+      vibrarTeclado();
+      mostrarToast('¡Formato de cotización WhatsApp copiado!');
+
+      setTimeout(() => {
+        btn.innerHTML = svgOriginal;
+      }, 1500);
+    }).catch(err => {
+      console.error('Error al copiar cotización:', err);
     });
   }
 

@@ -267,22 +267,19 @@
         </div>
       </div>
 
-      <!-- Dashboard Compacto de Tasas Oficiales -->
-      <section class="tasas-dashboard">
-        <div class="dashboard-card" data-ref-currency="USD">
-          <div class="card-indicator"></div>
-          <span class="card-label">USD BCV</span>
-          <span class="card-value" id="dash-usd-val">0,00</span>
+      <!-- Dashboard Ticker Ultra-delgado de Tasas Oficiales -->
+      <section class="tasas-dashboard-compact">
+        <div class="dashboard-item" data-ref-currency="USD" title="Ver historial USD BCV">
+          <span class="item-label">USD</span>
+          <span class="item-value" id="dash-usd-val">0,00</span>
         </div>
-        <div class="dashboard-card" data-ref-currency="EUR">
-          <div class="card-indicator"></div>
-          <span class="card-label">EUR BCV</span>
-          <span class="card-value" id="dash-eur-val">0,00</span>
+        <div class="dashboard-item" data-ref-currency="EUR" title="Ver historial EUR BCV">
+          <span class="item-label">EUR</span>
+          <span class="item-value" id="dash-eur-val">0,00</span>
         </div>
-        <div class="dashboard-card" data-ref-currency="USDT">
-          <div class="card-indicator"></div>
-          <span class="card-label">USDT Binance</span>
-          <span class="card-value" id="dash-usdt-val">0,00</span>
+        <div class="dashboard-item" data-ref-currency="USDT" title="Ver historial USDT Binance">
+          <span class="item-label">USDT</span>
+          <span class="item-value" id="dash-usdt-val">0,00</span>
         </div>
       </section>
     </header>
@@ -292,75 +289,76 @@
       <div class="calculator-card">
         <!-- Input Divisa Origen (Superior por defecto) -->
         <div class="input-group" id="group-foreign">
-          <div class="input-header">
-            <div class="currency-selector-row" id="foreign-selector-row">
-              <button type="button" class="selector-btn active" data-currency="USD" aria-label="Seleccionar Dólar USD">
-                <span class="selector-flag">
-                  <svg viewBox="0 0 24 24" class="svg-icon">
-                    <use href="#flag-usd" />
-                  </svg>
-                </span>
-                <span class="selector-label">$ USD</span>
+          <!-- Selector Dropdown a la izquierda -->
+          <div class="currency-select-container">
+            <button type="button" class="currency-select-trigger" id="foreign-select-trigger">
+              <span class="selected-flag-icon" id="foreign-flag-display">
+                <svg viewBox="0 0 24 24" class="svg-icon">
+                  <use href="#flag-usd" />
+                </svg>
+              </span>
+              <span class="selected-code" id="foreign-code-display">$ USD</span>
+              <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="currency-options-dropdown hidden" id="foreign-options-dropdown">
+              <button type="button" class="option-btn" data-currency="USD">
+                <span class="option-flag"><svg viewBox="0 0 24 24" class="svg-icon"><use href="#flag-usd" /></svg></span>
+                <span class="option-label">$ USD</span>
               </button>
-              <button type="button" class="selector-btn" data-currency="EUR" aria-label="Seleccionar Euro EUR">
-                <span class="selector-flag">
-                  <svg viewBox="0 0 24 24" class="svg-icon">
-                    <use href="#flag-eur" />
-                  </svg>
-                </span>
-                <span class="selector-label">€ EUR</span>
+              <button type="button" class="option-btn" data-currency="EUR">
+                <span class="option-flag"><svg viewBox="0 0 24 24" class="svg-icon"><use href="#flag-eur" /></svg></span>
+                <span class="option-label">€ EUR</span>
               </button>
-              <button type="button" class="selector-btn" data-currency="USDT" aria-label="Seleccionar Tether USDT">
-                <span class="selector-flag">
-                  <svg viewBox="0 0 24 24" class="svg-icon">
-                    <use href="#flag-usdt" />
-                  </svg>
-                </span>
-                <span class="selector-label">₮ USDT</span>
+              <button type="button" class="option-btn" data-currency="USDT">
+                <span class="option-flag"><svg viewBox="0 0 24 24" class="svg-icon"><use href="#flag-usdt" /></svg></span>
+                <span class="option-label">₮ USDT</span>
               </button>
-              <button type="button" class="selector-btn" data-currency="Custom"
-                aria-label="Seleccionar Dólar Personalizado">
-                <span class="selector-flag">
-                  <svg viewBox="0 0 24 24" class="svg-icon">
-                    <use href="#flag-custom" />
-                  </svg>
-                </span>
-                <span class="selector-label">$ PERS</span>
+              <button type="button" class="option-btn" data-currency="Custom">
+                <span class="option-flag"><svg viewBox="0 0 24 24" class="svg-icon"><use href="#flag-custom" /></svg></span>
+                <span class="option-label">$ PERS</span>
               </button>
-              <button type="button" class="selector-btn" data-currency="VES" aria-label="Seleccionar Bolívar VES">
-                <span class="selector-flag">
-                  <svg viewBox="0 0 24 24" class="svg-icon">
-                    <use href="#flag-ves" />
-                  </svg>
-                </span>
-                <span class="selector-label">Bs. VES</span>
+              <button type="button" class="option-btn" data-currency="VES">
+                <span class="option-flag"><svg viewBox="0 0 24 24" class="svg-icon"><use href="#flag-ves" /></svg></span>
+                <span class="option-label">Bs. VES</span>
               </button>
             </div>
           </div>
 
-          <div class="formula-cinta" id="formula-foreign-cinta"></div>
-          <div class="input-wrapper">
-            <span class="input-symbol" id="foreign-symbol">$</span>
-            <input type="text" id="input-foreign" inputmode="none" placeholder="1.00" autocomplete="off">
-            <!-- Copiar y compartir ocultos por CSS en input superior -->
-            <div class="input-actions">
-              <button class="input-action-btn copy-btn" id="copy-foreign-btn" aria-label="Copiar" title="Copiar">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                  stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
-              <button class="input-action-btn share-btn" id="share-foreign-btn" aria-label="Compartir"
-                title="Compartir">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                  stroke-linejoin="round">
-                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                  <polyline points="16 6 12 2 8 6"></polyline>
-                  <line x1="12" y1="2" x2="12" y2="15"></line>
-                </svg>
-              </button>
+          <!-- Valores y Fórmula a la derecha -->
+          <div class="input-values-wrapper">
+            <div class="formula-cinta" id="formula-foreign-cinta"></div>
+            <div class="input-wrapper">
+              <span class="input-symbol" id="foreign-symbol">$</span>
+              <input type="text" id="input-foreign" inputmode="none" placeholder="1.00" autocomplete="off">
+              <div class="input-actions">
+                <div class="copy-btn-container">
+                  <button class="input-action-btn copy-btn" id="copy-foreign-btn" aria-label="Copiar" title="Copiar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                      stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                  <!-- Menú de copiado flotante -->
+                  <div class="copy-tooltip hidden" id="tooltip-copy-foreign">
+                    <button type="button" class="tooltip-item" id="btn-copy-val-foreign">Solo valor</button>
+                    <button type="button" class="tooltip-item" id="btn-copy-text-foreign">Formato WhatsApp</button>
+                  </div>
+                </div>
+                <button class="input-action-btn share-btn" id="share-foreign-btn" aria-label="Compartir"
+                  title="Compartir">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                    <polyline points="16 6 12 2 8 6"></polyline>
+                    <line x1="12" y1="2" x2="12" y2="15"></line>
+                  </svg>
+                </button>
+              </div>
             </div>
+            <div class="commission-breakdown hidden" id="breakdown-foreign"></div>
           </div>
         </div>
 
@@ -382,65 +380,71 @@
 
         <!-- Input Divisa Destino (Inferior por defecto) -->
         <div class="input-group" id="group-ves">
-          <div class="input-header">
-            <div class="currency-selector-row" id="ves-selector-row">
-              <button type="button" class="selector-btn active" data-currency="VES"
-                aria-label="Seleccionar Bolívar VES">
-                <span class="selector-flag">
-                  <svg viewBox="0 0 24 24" class="svg-icon">
-                    <use href="#flag-ves" />
-                  </svg>
-                </span>
-                <span class="selector-label">Bs. VES</span>
+          <!-- Selector Dropdown a la izquierda -->
+          <div class="currency-select-container">
+            <button type="button" class="currency-select-trigger" id="ves-select-trigger">
+              <span class="selected-flag-icon" id="ves-flag-display">
+                <svg viewBox="0 0 24 24" class="svg-icon">
+                  <use href="#flag-ves" />
+                </svg>
+              </span>
+              <span class="selected-code" id="ves-code-display">Bs. VES</span>
+              <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="currency-options-dropdown hidden" id="ves-options-dropdown">
+              <button type="button" class="option-btn" data-currency="VES">
+                <span class="option-flag"><svg viewBox="0 0 24 24" class="svg-icon"><use href="#flag-ves" /></svg></span>
+                <span class="option-label">Bs. VES</span>
               </button>
-              <button type="button" class="selector-btn" data-currency="EUR" aria-label="Seleccionar Euro EUR">
-                <span class="selector-flag">
-                  <svg viewBox="0 0 24 24" class="svg-icon">
-                    <use href="#flag-eur" />
-                  </svg>
-                </span>
-                <span class="selector-label">€ EUR</span>
+              <button type="button" class="option-btn" data-currency="EUR">
+                <span class="option-flag"><svg viewBox="0 0 24 24" class="svg-icon"><use href="#flag-eur" /></svg></span>
+                <span class="option-label">€ EUR</span>
               </button>
-              <button type="button" class="selector-btn" data-currency="USD" aria-label="Seleccionar Dólar USD">
-                <span class="selector-flag">
-                  <svg viewBox="0 0 24 24" class="svg-icon">
-                    <use href="#flag-usd" />
-                  </svg>
-                </span>
-                <span class="selector-label">$ USD</span>
+              <button type="button" class="option-btn" data-currency="USD">
+                <span class="option-flag"><svg viewBox="0 0 24 24" class="svg-icon"><use href="#flag-usd" /></svg></span>
+                <span class="option-label">$ USD</span>
               </button>
-              <button type="button" class="selector-btn" data-currency="Custom"
-                aria-label="Seleccionar Tasa Personalizada">
-                <span class="selector-flag">
-                  <svg viewBox="0 0 24 24" class="svg-icon">
-                    <use href="#flag-custom" />
-                  </svg>
-                </span>
-                <span class="selector-label">$ PERS</span>
+              <button type="button" class="option-btn" data-currency="Custom">
+                <span class="option-flag"><svg viewBox="0 0 24 24" class="svg-icon"><use href="#flag-custom" /></svg></span>
+                <span class="option-label">$ PERS</span>
               </button>
             </div>
           </div>
-          <div class="formula-cinta" id="formula-ves-cinta"></div>
-          <div class="input-wrapper">
-            <span class="input-symbol" id="ves-symbol">Bs.</span>
-            <input type="text" id="input-ves" inputmode="none" placeholder="0.00" autocomplete="off">
-            <div class="input-actions">
-              <button class="input-action-btn copy-btn" id="copy-ves-btn" aria-label="Copiar" title="Copiar">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                  stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
-              <button class="input-action-btn share-btn" id="share-ves-btn" aria-label="Compartir" title="Compartir">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                  stroke-linejoin="round">
-                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                  <polyline points="16 6 12 2 8 6"></polyline>
-                  <line x1="12" y1="2" x2="12" y2="15"></line>
-                </svg>
-              </button>
+
+          <!-- Valores y Fórmula a la derecha -->
+          <div class="input-values-wrapper">
+            <div class="formula-cinta" id="formula-ves-cinta"></div>
+            <div class="input-wrapper">
+              <span class="input-symbol" id="ves-symbol">Bs.</span>
+              <input type="text" id="input-ves" inputmode="none" placeholder="0.00" autocomplete="off">
+              <div class="input-actions">
+                <div class="copy-btn-container">
+                  <button class="input-action-btn copy-btn" id="copy-ves-btn" aria-label="Copiar" title="Copiar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                      stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                  <!-- Menú de copiado flotante -->
+                  <div class="copy-tooltip hidden" id="tooltip-copy-ves">
+                    <button type="button" class="tooltip-item" id="btn-copy-val-ves">Solo valor</button>
+                    <button type="button" class="tooltip-item" id="btn-copy-text-ves">Formato WhatsApp</button>
+                  </div>
+                </div>
+                <button class="input-action-btn share-btn" id="share-ves-btn" aria-label="Compartir" title="Compartir">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                    <polyline points="16 6 12 2 8 6"></polyline>
+                    <line x1="12" y1="2" x2="12" y2="15"></line>
+                  </svg>
+                </button>
+              </div>
             </div>
+            <div class="commission-breakdown hidden" id="breakdown-ves"></div>
           </div>
         </div>
 
@@ -448,6 +452,20 @@
         <div id="rate-info-container" class="rate-info-container">
           <div class="rate-calculation" id="rate-calc-text">$1 = Bs.523,67</div>
           <div class="rate-update-time" id="rate-update-text">Actualizado 21 may. a las 8:00 p. m.</div>
+        </div>
+
+        <!-- Módulo de Comisiones / IGTF -->
+        <div class="comisiones-container" id="comisiones-container">
+          <span class="comisiones-title">RECARGO / COMISIÓN</span>
+          <div class="comisiones-pills">
+            <button type="button" class="commission-btn active" data-value="0">Ninguno</button>
+            <button type="button" class="commission-btn" data-value="3">+3% IGTF</button>
+            <button type="button" class="commission-btn" id="btn-custom-commission" data-value="custom">Personalizado</button>
+          </div>
+          <div class="custom-commission-input-wrapper hidden" id="custom-commission-wrapper">
+            <input type="text" id="input-custom-commission" placeholder="+0.0%" inputmode="decimal">
+            <span class="commission-input-symbol">%</span>
+          </div>
         </div>
       </div>
 
@@ -558,6 +576,80 @@
     <div class="prompt-actions">
       <button id="btn-cancel-install" class="btn-text">Ahora no</button>
       <button id="btn-trigger-install" class="btn-primary-install">Instalar</button>
+    </div>
+  </div>
+
+  <!-- Modal Historial de Variación y Gráfico SVG -->
+  <div id="modal-historial" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-currency-flag" id="modal-currency-flag"></span>
+          <div>
+            <h3 id="modal-title-text">Historial de Tasa</h3>
+            <p id="modal-subtitle-text">Variación en los últimos 7 días</p>
+          </div>
+        </div>
+        <button id="close-modal-historial" class="close-modal-btn" aria-label="Cerrar modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Tarjeta de Resumen -->
+        <div class="modal-summary-card">
+          <div class="summary-item">
+            <span class="summary-label">Tasa Actual</span>
+            <span class="summary-value" id="modal-summary-rate">Bs. 0,00</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Variación 7D</span>
+            <span class="summary-value" id="modal-summary-variation">0,00%</span>
+          </div>
+        </div>
+
+        <!-- Contenedor del Gráfico SVG -->
+        <div class="chart-container">
+          <svg id="svg-chart" viewBox="0 0 500 220" width="100%" height="100%">
+            <!-- Gradientes y filtros de gráfico -->
+            <defs>
+              <linearGradient id="chart-glow" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--accent-color)" stop-opacity="0.32" />
+                <stop offset="100%" stop-color="var(--accent-color)" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
+            <!-- Cuadrícula -->
+            <g class="chart-grid" id="chart-grid-group"></g>
+            <!-- Línea de área degradada -->
+            <path class="chart-area" id="chart-area-path" d="" fill="url(#chart-glow)"></path>
+            <!-- Línea de tendencia neón -->
+            <path class="chart-line" id="chart-line-path" d="" stroke="var(--accent-color)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+            <!-- Nodos del gráfico -->
+            <g class="chart-dots" id="chart-dots-group"></g>
+            <!-- Etiquetas del eje X -->
+            <g class="chart-labels" id="chart-labels-group"></g>
+          </svg>
+        </div>
+
+        <!-- Tabla de Datos Históricos -->
+        <div class="history-table-container">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th style="text-align: right;">Cotización (VES)</th>
+                <th style="text-align: right;">Variación</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <!-- Rellenado vía JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
