@@ -372,12 +372,6 @@ body {
   background: transparent;
   border: none;
   padding: 0.2rem 0;
-  transition: opacity 0.25s ease;
-  opacity: 0.4; /* Inactivo por defecto */
-}
-
-.input-group.active {
-  opacity: 1; /* Activo */
 }
 
 .input-values-wrapper {
@@ -387,6 +381,12 @@ body {
   align-items: flex-end;
   text-align: right;
   min-width: 0;
+  opacity: 0.45; /* Inactivo por defecto (cifras y fórmulas) */
+  transition: opacity 0.25s ease;
+}
+
+.input-group.active .input-values-wrapper {
+  opacity: 1; /* Cifras activas */
 }
 
 /* Componente Dropdown Selector de Divisa */
@@ -411,12 +411,15 @@ body {
   transition: var(--transition-smooth);
   outline: none;
   user-select: none;
+  opacity: 0.75; /* Ligeramente atenuado por defecto */
 }
 
-.currency-select-trigger:hover {
+.currency-select-trigger:hover,
+.currency-select-container.open .currency-select-trigger {
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
   border-color: rgba(255, 255, 255, 0.15);
+  opacity: 1;
 }
 
 .currency-select-trigger:active {
@@ -428,6 +431,7 @@ body {
   background: rgba(var(--accent-color-rgb), 0.05);
   color: var(--text-primary);
   box-shadow: 0 0 10px rgba(var(--accent-color-rgb), 0.05);
+  opacity: 1;
 }
 
 .selected-flag-icon {

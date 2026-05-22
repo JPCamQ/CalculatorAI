@@ -80,6 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Estado de Comisión
   let activeCommissionPercent = 0;
 
+  // Detectar dispositivo táctil/móvil
+  const esDispositivoMovil = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
   // --- SVGs de Divisas para los Inputs ---
   const currencySvgs = {
     USD: `<svg viewBox="0 0 24 24" class="svg-icon"><use href="#flag-usd"/></svg>`,
@@ -902,40 +905,76 @@ document.addEventListener('DOMContentLoaded', () => {
   // Configuración de foco inicial
   document.getElementById('group-foreign').classList.add('active');
   document.getElementById('group-ves').classList.remove('active');
-  inputForeign.readOnly = false;
-  inputVes.readOnly = true;
+  
+  if (esDispositivoMovil) {
+    inputForeign.readOnly = true;
+    inputVes.readOnly = true;
+    if (inputCustomCommission) inputCustomCommission.readOnly = true;
+  } else {
+    inputForeign.readOnly = false;
+    inputVes.readOnly = true;
+  }
 
   function cambiarInputActivo(nuevoInput) {
     if (isEditingRate) confirmarTasaManual();
 
     if (activeInput !== nuevoInput) {
-      // Obtener el valor numérico crudo del input que estaba activo (arriba)
-      const valorPrevioRaw = evaluarExpresionIncompleta(activeInput.value);
+      // SOLO transferir el valor si estamos alternando entre inputs de divisa (foreign y ves)
+      const esDivisaAnterior = (activeInput === inputForeign || activeInput === inputVes);
+      const esDivisaNueva = (nuevoInput === inputForeign || nuevoInput === inputVes);
+
+      let valorPrevioRaw = NaN;
+      if (esDivisaAnterior) {
+        valorPrevioRaw = evaluarExpresionIncompleta(activeInput.value);
+      }
 
       activeInput = nuevoInput;
       clearOnNextKey = true; // Reiniciar la sobrescritura
 
+      // Configuración de visualización activa y estados reversed
       if (activeInput === inputForeign) {
         isReversed = false;
         calculatorCard.classList.remove('reversed');
         document.getElementById('group-foreign').classList.add('active');
         document.getElementById('group-ves').classList.remove('active');
-        inputForeign.readOnly = false;
-        inputVes.readOnly = true;
-      } else {
+      } else if (activeInput === inputVes) {
         isReversed = true;
         calculatorCard.classList.add('reversed');
         document.getElementById('group-ves').classList.add('active');
         document.getElementById('group-foreign').classList.remove('active');
-        inputVes.readOnly = false;
-        inputForeign.readOnly = true;
+      } else if (activeInput === inputCustomCommission) {
+        document.getElementById('group-foreign').classList.remove('active');
+        document.getElementById('group-ves').classList.remove('active');
       }
 
-      // Asignar el valor numérico del origen anterior al nuevo input activo (arriba)
-      if (!isNaN(valorPrevioRaw) && valorPrevioRaw > 0) {
-        activeInput.value = formatearCantidad(valorPrevioRaw, 2);
+      // Gestión de readOnly según si es móvil o de escritorio
+      if (esDispositivoMovil) {
+        inputForeign.readOnly = true;
+        inputVes.readOnly = true;
+        if (inputCustomCommission) inputCustomCommission.readOnly = true;
       } else {
-        activeInput.value = '';
+        if (activeInput === inputForeign) {
+          inputForeign.readOnly = false;
+          inputVes.readOnly = true;
+          if (inputCustomCommission) inputCustomCommission.readOnly = true;
+        } else if (activeInput === inputVes) {
+          inputVes.readOnly = false;
+          inputForeign.readOnly = true;
+          if (inputCustomCommission) inputCustomCommission.readOnly = true;
+        } else if (activeInput === inputCustomCommission) {
+          if (inputCustomCommission) inputCustomCommission.readOnly = false;
+          inputForeign.readOnly = true;
+          inputVes.readOnly = true;
+        }
+      }
+
+      // Asignar el valor numérico del origen anterior al nuevo input activo (solo si ambos son divisas)
+      if (esDivisaAnterior && esDivisaNueva) {
+        if (!isNaN(valorPrevioRaw) && valorPrevioRaw > 0) {
+          activeInput.value = formatearCantidad(valorPrevioRaw, 2);
+        } else {
+          activeInput.value = '';
+        }
       }
 
       animarEntradaInputs();
@@ -944,12 +983,22 @@ document.addEventListener('DOMContentLoaded', () => {
       actualizarCintaFormula();
     } else {
       // Mantener consistencia si es el mismo input
-      if (activeInput === inputForeign) {
-        inputForeign.readOnly = false;
-        inputVes.readOnly = true;
-      } else {
-        inputVes.readOnly = false;
+      if (esDispositivoMovil) {
         inputForeign.readOnly = true;
+        inputVes.readOnly = true;
+        if (inputCustomCommission) inputCustomCommission.readOnly = true;
+      } else {
+        if (activeInput === inputForeign) {
+          inputForeign.readOnly = false;
+          inputVes.readOnly = true;
+        } else if (activeInput === inputVes) {
+          inputVes.readOnly = false;
+          inputForeign.readOnly = true;
+        } else if (activeInput === inputCustomCommission) {
+          if (inputCustomCommission) inputCustomCommission.readOnly = false;
+          inputForeign.readOnly = true;
+          inputVes.readOnly = true;
+        }
       }
     }
   }
@@ -1881,11 +1930,23 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   if (inputCustomCommission) {
+    const activarPillCustom = () => {
+      comisionesPills.forEach(p => {
+        if (p.dataset.value === 'custom') p.classList.add('active');
+        else p.classList.remove('active');
+      });
+      let valText = inputCustomCommission.value.trim().replace(/\+/g, '').replace(/%/g, '').replace(/,/g, '.');
+      let val = parseFloat(valText);
+      activeCommissionPercent = isNaN(val) ? 0 : val;
+      realizarConversion();
+    };
+
     inputCustomCommission.addEventListener('focus', () => {
       activeInput = inputCustomCommission;
       document.getElementById('group-foreign').classList.remove('active');
       document.getElementById('group-ves').classList.remove('active');
       clearOnNextKey = true;
+      activarPillCustom();
     });
 
     inputCustomCommission.addEventListener('pointerdown', () => {
@@ -1893,6 +1954,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('group-foreign').classList.remove('active');
       document.getElementById('group-ves').classList.remove('active');
       clearOnNextKey = true;
+      activarPillCustom();
     });
 
     // Escuchar cambios en el input de comisión personalizada
