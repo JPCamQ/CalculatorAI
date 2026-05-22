@@ -332,24 +332,24 @@ document.addEventListener('DOMContentLoaded', () => {
       // Ocultar botón Custom abajo
       if (btnForeign_Custom) btnForeign_Custom.classList.add('hidden');
       
+      // Ocultar siempre USD arriba en modo invertido
+      if (btnVes_Usd) btnVes_Usd.classList.add('hidden');
+      
+      // Si la divisa activa superior es USD en modo invertido (lo cual no debe ocurrir), reasignar a VES
+      if (activeVesCurrency === 'USD') {
+        activeVesCurrency = 'VES';
+      }
+      
       if (activeVesCurrency === 'VES') {
         if (btnForeign_Ves) btnForeign_Ves.classList.add('hidden');
         if (activeForeignCurrency === 'VES') {
           activeForeignCurrency = 'USD';
         }
       } else if (activeVesCurrency === 'EUR') {
-        if (btnVes_Usd) btnVes_Usd.classList.add('hidden');
         if (btnForeign_Usdt) btnForeign_Usdt.classList.add('hidden');
         if (btnForeign_Eur) btnForeign_Eur.classList.add('hidden');
         if (activeForeignCurrency !== 'USD' && activeForeignCurrency !== 'VES') {
           activeForeignCurrency = 'USD';
-        }
-      } else if (activeVesCurrency === 'USD') {
-        if (btnVes_Eur) btnVes_Eur.classList.add('hidden');
-        if (btnForeign_Usdt) btnForeign_Usdt.classList.add('hidden');
-        if (btnForeign_Usd) btnForeign_Usd.classList.add('hidden');
-        if (activeForeignCurrency !== 'EUR' && activeForeignCurrency !== 'VES') {
-          activeForeignCurrency = 'EUR';
         }
       }
     }
@@ -1001,6 +1001,15 @@ document.addEventListener('DOMContentLoaded', () => {
       navigator.serviceWorker.register('./sw.js')
         .then(reg => console.log('Service Worker registrado con éxito:', reg.scope))
         .catch(err => console.error('Error al registrar el Service Worker:', err));
+    });
+
+    // Recargar la página automáticamente cuando el nuevo Service Worker tome el control
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
     });
   }
 
