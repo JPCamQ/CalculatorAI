@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'calc-divisas-v52-custom-currency-select-safety';
+const CACHE_NAME = 'calc-divisas-v53-copy-tooltip-style-fixed';
 const ASSETS = [
   './',
   './style.css',

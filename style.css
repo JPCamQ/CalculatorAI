@@ -1797,21 +1797,32 @@ body {
 
 .copy-tooltip {
   position: absolute;
-  bottom: calc(100% + 8px);
+  bottom: calc(100% + 10px);
   right: 0;
-  width: 140px;
-  background: rgba(18, 20, 28, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  width: 145px;
+  background: #0f111a;
+  border: 1px solid rgba(var(--accent-color-rgb), 0.35);
   border-radius: 0.75rem;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(var(--accent-color-rgb), 0.1);
-  padding: 0.35rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(var(--accent-color-rgb), 0.15);
+  padding: 0.4rem;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  z-index: 150;
+  gap: 0.2rem;
+  z-index: 200;
   animation: tooltipFadeIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
+}
+
+.copy-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  right: 12px;
+  width: 10px;
+  height: 10px;
+  background: #0f111a;
+  border-right: 1px solid rgba(var(--accent-color-rgb), 0.35);
+  border-bottom: 1px solid rgba(var(--accent-color-rgb), 0.35);
+  transform: rotate(45deg);
 }
 
 .copy-tooltip.hidden {
@@ -1834,10 +1845,10 @@ body {
   background: transparent;
   border: none;
   border-radius: 0.45rem;
-  padding: 0.45rem 0.65rem;
-  color: var(--text-secondary);
+  padding: 0.5rem 0.75rem;
+  color: #f1f5f9;
   font-family: var(--font-primary);
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 600;
   text-align: left;
   cursor: pointer;
@@ -1846,7 +1857,7 @@ body {
 }
 
 .tooltip-item:hover {
-  background: rgba(var(--accent-color-rgb), 0.12);
+  background: rgba(var(--accent-color-rgb), 0.15);
   color: var(--accent-color);
 }
 
