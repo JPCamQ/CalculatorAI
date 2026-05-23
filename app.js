@@ -48,6 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const comisionesPills = document.querySelectorAll('.commission-btn');
   const customCommissionWrapper = document.getElementById('custom-commission-wrapper');
   const inputCustomCommission = document.getElementById('input-custom-commission');
+  const btnCommTypePlus = document.getElementById('btn-comm-type-plus');
+  const btnCommTypeMinus = document.getElementById('btn-comm-type-minus');
   const breakdownForeign = document.getElementById('breakdown-foreign');
   const breakdownVes = document.getElementById('breakdown-ves');
 
@@ -79,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Estado de Comisión
   let activeCommissionPercent = 0;
+  let customCommissionType = 'plus'; // 'plus' para recargo (+), 'minus' para descuento (-)
 
   // Detectar dispositivo táctil/móvil
   const esDispositivoMovil = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -1200,21 +1203,19 @@ document.addEventListener('DOMContentLoaded', () => {
           if (valActual.length > 0) {
             valActual = valActual.slice(0, -1);
             inputCustomCommission.value = valActual;
-            
-            let valText = valActual.trim().replace(/,/g, '.');
-            let val = parseFloat(valText) || 0;
-            if (val > 100) val = 100;
-            if (val < -100) val = -100;
-            activeCommissionPercent = val;
-            realizarConversion();
+            actualizarComisionPersonalizada();
           }
           return;
         }
 
         if (['+', '-'].includes(key)) {
-          if (valActual === '') {
-            inputCustomCommission.value = key;
+          const type = key === '+' ? 'plus' : 'minus';
+          customCommissionType = type;
+          if (btnCommTypePlus && btnCommTypeMinus) {
+            btnCommTypePlus.classList.toggle('active', type === 'plus');
+            btnCommTypeMinus.classList.toggle('active', type === 'minus');
           }
+          actualizarComisionPersonalizada();
           return;
         }
 
@@ -1224,8 +1225,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (key === ',' || key === '.') {
           if (!valActual.includes(',') && !valActual.includes('.')) {
-            if (valActual === '' || valActual === '+' || valActual === '-') {
-              inputCustomCommission.value = valActual + '0,';
+            if (valActual === '') {
+              inputCustomCommission.value = '0,';
             } else {
               inputCustomCommission.value = valActual + ',';
             }
@@ -1241,12 +1242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         inputCustomCommission.value = valActual;
-        let valText = valActual.trim().replace(/,/g, '.');
-        let val = parseFloat(valText) || 0;
-        if (val > 100) val = 100;
-        if (val < -100) val = -100;
-        activeCommissionPercent = val;
-        realizarConversion();
+        actualizarComisionPersonalizada();
         return;
       }
 
@@ -1902,6 +1898,37 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Inicializar Eventos de Comisión / IGTF ---
+  function actualizarComisionPersonalizada() {
+    if (!inputCustomCommission) return;
+    let valActual = inputCustomCommission.value.trim().replace(/,/g, '.');
+    // Remover cualquier signo unario que pudiese haber quedado
+    valActual = valActual.replace(/[\+\-]/g, '');
+    let val = parseFloat(valActual) || 0;
+    if (val > 100) val = 100;
+    if (val < 0) val = 0; // El valor crudo es siempre positivo
+
+    // Aplicar el signo de acuerdo al tipo seleccionado
+    if (customCommissionType === 'minus') {
+      activeCommissionPercent = -Math.abs(val);
+    } else {
+      activeCommissionPercent = Math.abs(val);
+    }
+    realizarConversion();
+  }
+
+  if (btnCommTypePlus && btnCommTypeMinus) {
+    [btnCommTypePlus, btnCommTypeMinus].forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        vibrarTeclado();
+        customCommissionType = btn.dataset.type;
+        btnCommTypePlus.classList.toggle('active', customCommissionType === 'plus');
+        btnCommTypeMinus.classList.toggle('active', customCommissionType === 'minus');
+        actualizarComisionPersonalizada();
+      });
+    });
+  }
+
   comisionesPills.forEach(pill => {
     pill.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1919,6 +1946,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('group-ves').classList.remove('active');
         clearOnNextKey = true;
         inputCustomCommission.focus();
+        actualizarComisionPersonalizada();
       } else {
         customCommissionWrapper.classList.add('hidden');
         activeCommissionPercent = parseFloat(val) || 0;
@@ -1935,10 +1963,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (p.dataset.value === 'custom') p.classList.add('active');
         else p.classList.remove('active');
       });
-      let valText = inputCustomCommission.value.trim().replace(/\+/g, '').replace(/%/g, '').replace(/,/g, '.');
-      let val = parseFloat(valText);
-      activeCommissionPercent = isNaN(val) ? 0 : val;
-      realizarConversion();
+      customCommissionWrapper.classList.remove('hidden');
+      actualizarComisionPersonalizada();
     };
 
     inputCustomCommission.addEventListener('focus', () => {
@@ -1960,28 +1986,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Escuchar cambios en el input de comisión personalizada
     inputCustomCommission.addEventListener('input', () => {
       let valText = inputCustomCommission.value.trim().replace(/,/g, '.');
-      // Permitir solo números y opcionalmente signo más o menos al principio
-      valText = valText.replace(/[^\d\.\+\-]/g, '');
+      // Permitir solo números y opcionalmente puntos
+      valText = valText.replace(/[^\d\.]/g, '');
       inputCustomCommission.value = valText;
-
-      let val = parseFloat(valText) || 0;
-      // Limitar valores realistas
-      if (val > 100) val = 100;
-      if (val < -100) val = -100;
-
-      activeCommissionPercent = val;
-      realizarConversion();
+      actualizarComisionPersonalizada();
     });
 
     inputCustomCommission.addEventListener('blur', () => {
-      let valText = inputCustomCommission.value.trim();
+      let valText = inputCustomCommission.value.trim().replace(/,/g, '.');
+      valText = valText.replace(/[^\d\.]/g, '');
       let val = parseFloat(valText) || 0;
       if (val > 100) val = 100;
-      if (val < -100) val = -100;
 
-      activeCommissionPercent = val;
-      inputCustomCommission.value = val >= 0 ? `+${val}` : `${val}`;
-      realizarConversion();
+      // Formatear visualmente sin signo unario en el input
+      inputCustomCommission.value = val.toFixed(2).replace('.', ',');
+      actualizarComisionPersonalizada();
     });
 
     // Soporte para que al presionar Enter en comisiones personalizadas se oculte el teclado

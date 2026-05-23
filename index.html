@@ -463,7 +463,11 @@
             <button type="button" class="commission-btn" id="btn-custom-commission" data-value="custom">Personalizado</button>
           </div>
           <div class="custom-commission-input-wrapper hidden" id="custom-commission-wrapper">
-            <input type="text" id="input-custom-commission" placeholder="+0.0%" inputmode="none">
+            <div class="commission-type-selector">
+              <button type="button" class="comm-type-btn active" id="btn-comm-type-plus" data-type="plus">+</button>
+              <button type="button" class="comm-type-btn" id="btn-comm-type-minus" data-type="minus">-</button>
+            </div>
+            <input type="text" id="input-custom-commission" placeholder="0.00" inputmode="none">
             <span class="commission-input-symbol">%</span>
           </div>
         </div>
