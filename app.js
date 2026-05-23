@@ -315,6 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let isReversed = false;             // false: Foreign -> VES/EUR, true: VES/EUR -> Foreign
   let deferredPrompt = null;          // Almacena el evento de instalación de Android
   let isEditingRate = false;          // Indica si el usuario está editando activamente la tasa
+  let isEditingCustomCommission = false; // Indica si se está editando la comisión personalizada
   let rateEditStarted = false;         // Indica si se ha iniciado la escritura de la tasa en limpio
   let clearOnNextKey = true;          // Flag para sobrescribir el valor inicial
 
@@ -1111,16 +1112,64 @@ document.addEventListener('DOMContentLoaded', () => {
     realizarConversion();
   }
 
+  function activarEdicionComision() {
+    isEditingCustomCommission = true;
+    inputCustomCommission.classList.add('editing-input');
+    activeInput = inputCustomCommission;
+    clearOnNextKey = true;
+
+    // Quitar clases de activo de los grupos de divisa
+    document.getElementById('group-foreign').classList.remove('active');
+    document.getElementById('group-ves').classList.remove('active');
+
+    // Activar visualmente la píldora Custom
+    comisionesPills.forEach(p => {
+      if (p.dataset.value === 'custom') p.classList.add('active');
+      else p.classList.remove('active');
+    });
+    customCommissionWrapper.classList.remove('hidden');
+
+    if (!esDispositivoMovil) {
+      inputCustomCommission.readOnly = false;
+      inputCustomCommission.focus();
+    }
+  }
+
+  function confirmarComisionManual() {
+    isEditingCustomCommission = false;
+    inputCustomCommission.classList.remove('editing-input');
+
+    if (!esDispositivoMovil) {
+      inputCustomCommission.readOnly = true;
+    }
+
+    // Restaurar activeInput a la divisa correspondiente
+    const nuevoInput = !isReversed ? inputForeign : inputVes;
+    cambiarInputActivo(nuevoInput);
+
+    actualizarComisionPersonalizada();
+  }
+
   // Escuchadores de Tasa
   rateCalcText.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!isEditingRate) {
+      mostrarToast('Toca 2 veces (doble clic) para editar la tasa');
+    }
+  });
+
+  rateCalcText.addEventListener('dblclick', (e) => {
     e.stopPropagation();
     activarEdicionTasa();
   });
 
-  // Confirmar tasa manual al hacer clic fuera del texto de tasa si está editando
+  // Confirmar tasa manual o comision al hacer clic fuera si se está editando
   document.addEventListener('pointerdown', (e) => {
     if (isEditingRate && !e.target.closest('#rate-calc-text') && !e.target.closest('.keypad-btn')) {
       confirmarTasaManual();
+    }
+    if (isEditingCustomCommission && !e.target.closest('#input-custom-commission') && !e.target.closest('.keypad-btn') && !e.target.closest('.commission-type-selector')) {
+      confirmarComisionManual();
     }
   });
 
@@ -1170,12 +1219,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         realizarConversion();
-
-        if (selectedCurrency === 'Custom') {
-          setTimeout(() => {
-            activarEdicionTasa();
-          }, 100);
-        }
       }
     });
   });
@@ -1198,10 +1241,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         actualizarDisplayTasa();
         realizarConversion();
-
-        setTimeout(() => {
-          activarEdicionTasa();
-        }, 100);
         return;
       }
 
@@ -1233,9 +1272,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let valActual = inputCustomCommission.value;
 
         if (key === 'check') {
-          inputCustomCommission.blur();
-          const nuevoInput = !isReversed ? inputForeign : inputVes;
-          cambiarInputActivo(nuevoInput);
+          confirmarComisionManual();
           return;
         }
 
@@ -2002,14 +2039,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const val = pill.dataset.value;
       if (val === 'custom') {
         customCommissionWrapper.classList.remove('hidden');
-        activeInput = inputCustomCommission;
-        document.getElementById('group-foreign').classList.remove('active');
-        document.getElementById('group-ves').classList.remove('active');
-        clearOnNextKey = true;
-        inputCustomCommission.focus();
         actualizarComisionPersonalizada();
+        // Mantener el activeInput en la divisa correspondiente para no irrumpir en la calculadora
+        const nuevoInput = !isReversed ? inputForeign : inputVes;
+        cambiarInputActivo(nuevoInput);
       } else {
         customCommissionWrapper.classList.add('hidden');
+        isEditingCustomCommission = false;
+        if (inputCustomCommission) inputCustomCommission.classList.remove('editing-input');
         activeCommissionPercent = parseFloat(val) || 0;
         realizarConversion();
         const nuevoInput = !isReversed ? inputForeign : inputVes;
@@ -2019,29 +2056,31 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   if (inputCustomCommission) {
-    const activarPillCustom = () => {
-      comisionesPills.forEach(p => {
-        if (p.dataset.value === 'custom') p.classList.add('active');
-        else p.classList.remove('active');
-      });
-      customCommissionWrapper.classList.remove('hidden');
-      actualizarComisionPersonalizada();
-    };
-
-    inputCustomCommission.addEventListener('focus', () => {
-      activeInput = inputCustomCommission;
-      document.getElementById('group-foreign').classList.remove('active');
-      document.getElementById('group-ves').classList.remove('active');
-      clearOnNextKey = true;
-      activarPillCustom();
+    inputCustomCommission.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!isEditingCustomCommission) {
+        inputCustomCommission.blur();
+        mostrarToast('Toca 2 veces (doble clic) para editar la comisión');
+      }
     });
 
-    inputCustomCommission.addEventListener('pointerdown', () => {
-      activeInput = inputCustomCommission;
-      document.getElementById('group-foreign').classList.remove('active');
-      document.getElementById('group-ves').classList.remove('active');
-      clearOnNextKey = true;
-      activarPillCustom();
+    inputCustomCommission.addEventListener('pointerdown', (e) => {
+      if (!isEditingCustomCommission) {
+        e.preventDefault(); // Evitar el foco y seleccion en un click simple
+        e.stopPropagation();
+        mostrarToast('Toca 2 veces (doble clic) para editar la comisión');
+      }
+    });
+
+    inputCustomCommission.addEventListener('focus', (e) => {
+      if (!isEditingCustomCommission) {
+        inputCustomCommission.blur();
+      }
+    });
+
+    inputCustomCommission.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      activarEdicionComision();
     });
 
     // Escuchar cambios en el input de comisión personalizada
@@ -2054,20 +2093,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     inputCustomCommission.addEventListener('blur', () => {
-      let valText = inputCustomCommission.value.trim().replace(/,/g, '.');
-      valText = valText.replace(/[^\d\.]/g, '');
-      let val = parseFloat(valText) || 0;
-      if (val > 100) val = 100;
+      if (isEditingCustomCommission) {
+        confirmarComisionManual();
+      } else {
+        let valText = inputCustomCommission.value.trim().replace(/,/g, '.');
+        valText = valText.replace(/[^\d\.]/g, '');
+        let val = parseFloat(valText) || 0;
+        if (val > 100) val = 100;
 
-      // Formatear visualmente sin signo unario en el input
-      inputCustomCommission.value = val.toFixed(2).replace('.', ',');
-      actualizarComisionPersonalizada();
+        // Formatear visualmente sin signo unario en el input
+        inputCustomCommission.value = val.toFixed(2).replace('.', ',');
+        actualizarComisionPersonalizada();
+      }
     });
 
     // Soporte para que al presionar Enter en comisiones personalizadas se oculte el teclado
     inputCustomCommission.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        inputCustomCommission.blur();
+        confirmarComisionManual();
       }
     });
   }

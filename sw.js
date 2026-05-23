@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'calc-divisas-v50-toast-single-line-fixed';
+const CACHE_NAME = 'calc-divisas-v52-custom-currency-select-safety';
 const ASSETS = [
   './',
   './style.css',
