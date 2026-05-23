@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'calc-divisas-v47-commission-types';
+const CACHE_NAME = 'calc-divisas-v50-toast-single-line-fixed';
 const ASSETS = [
   './',
   './style.css',

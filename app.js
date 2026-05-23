@@ -220,6 +220,47 @@ document.addEventListener('DOMContentLoaded', () => {
     return isFinite(total) ? total : NaN;
   }
 
+  function procesarPorcentajesEnFormula(s) {
+    while (true) {
+      const match = s.match(/([0-9]+(?:\.[0-9]+)?)\s*%/);
+      if (!match) break;
+
+      const pStr = match[1];
+      const pVal = parseFloat(pStr);
+      const startIdx = match.index;
+      const endIdx = match.index + match[0].length;
+
+      let idxOp = -1;
+      for (let i = startIdx - 1; i >= 0; i--) {
+        if (s[i] !== ' ') {
+          if (['+', '-', '*', '/'].includes(s[i])) {
+            idxOp = i;
+          }
+          break;
+        }
+      }
+
+      let reemplazo = pVal / 100;
+
+      if (idxOp !== -1) {
+        const op = s[idxOp];
+        const baseStr = s.substring(0, idxOp).trim();
+        const tieneDigito = /[0-9]/.test(baseStr);
+        if (tieneDigito) {
+          if (op === '+' || op === '-') {
+            const baseVal = evaluarExpresionIncompleta(baseStr);
+            if (!isNaN(baseVal)) {
+              reemplazo = (baseVal * pVal) / 100;
+            }
+          }
+        }
+      }
+
+      s = s.substring(0, startIdx) + reemplazo + s.substring(endIdx);
+    }
+    return s;
+  }
+
   function evaluarExpresionIncompleta(formula) {
     if (!formula) return NaN;
 
@@ -229,10 +270,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Reemplazar operadores visuales si los hubiere
     s = s.replace(/×/g, '*').replace(/÷/g, '/');
 
+    // Procesar porcentajes comercialmente
+    s = procesarPorcentajesEnFormula(s);
+
     // Remover recursivamente operadores colgantes o puntos decimales al final
     while (true) {
       const originalLength = s.length;
-      s = s.replace(/[\+\-\*\/]+$/, '').trim();
+      s = s.replace(/[\+\-\*\/%]+$/, '').trim();
       s = s.replace(/\.+$/, '').trim();
       if (s.length === originalLength) {
         break;
@@ -242,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (s === '') return NaN;
 
     // Validar caracteres permitidos
-    if (!/^[0-9\+\-\*\/\.\s]+$/.test(s)) {
+    if (!/^[0-9\+\-\*\/\.\s\(\)]+$/.test(s)) {
       return NaN;
     }
 
@@ -804,7 +848,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (activeCommissionPercent !== 0) {
         const textNeto = `${currencySymbols[activeVesCurrency]} ${formatearCantidad(resultadoBase, 2)}`;
         const textComision = `${currencySymbols[activeVesCurrency]} ${formatearCantidad(montoComision, 2)}`;
-        const labelComision = activeCommissionPercent === 3 ? 'Recargo IGTF (3%)' : `Recargo (${activeCommissionPercent >= 0 ? '+' : ''}${activeCommissionPercent}%)`;
+        const activePill = document.querySelector('.commission-btn.active');
+        const esIGTF = activePill && activePill.dataset.value === '3';
+        const labelComision = esIGTF ? 'Recargo IGTF (3%)' : `Recargo (${activeCommissionPercent >= 0 ? '+' : ''}${activeCommissionPercent.toString().replace(/\./g, ',')}%)`;
         if (breakdownVes) {
           breakdownVes.innerHTML = `Neto: <span class="highlight">${textNeto}</span> | ${labelComision}: <span class="highlight">${textComision}</span>`;
           breakdownVes.classList.remove('hidden');
@@ -842,7 +888,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const valorNetoVes = valorDestino / factorComision;
         const textNeto = `${currencySymbols[activeVesCurrency]} ${formatearCantidad(valorNetoVes, 2)}`;
         const textComision = `${currencySymbols[activeVesCurrency]} ${formatearCantidad(montoComision, 2)}`;
-        const labelComision = activeCommissionPercent === 3 ? 'Recargo IGTF (3%)' : `Recargo (${activeCommissionPercent >= 0 ? '+' : ''}${activeCommissionPercent}%)`;
+        const activePill = document.querySelector('.commission-btn.active');
+        const esIGTF = activePill && activePill.dataset.value === '3';
+        const labelComision = esIGTF ? 'Recargo IGTF (3%)' : `Recargo (${activeCommissionPercent >= 0 ? '+' : ''}${activeCommissionPercent.toString().replace(/\./g, ',')}%)`;
         if (breakdownVes) {
           breakdownVes.innerHTML = `Neto: <span class="highlight">${textNeto}</span> | ${labelComision}: <span class="highlight">${textComision}</span>`;
           breakdownVes.classList.remove('hidden');
@@ -1341,6 +1389,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       let valorActual = activeInput.value;
 
+      if (key === '%') {
+        // Solo permitir % si el último caracter es un dígito o ya tiene números
+        if (/[0-9]$/.test(valorActual)) {
+          valorActual += '%';
+        }
+        activeInput.value = valorActual;
+        realizarConversion();
+        actualizarCintaFormula();
+        return;
+      }
+
       if (key === 'backspace') {
         if (valorActual.length > 0) {
           if (valorActual.endsWith(' ')) {
@@ -1754,7 +1813,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
           const textNeto = `${symbolDest} ${formatearCantidad(vNeto, 2)}`;
           const textCom = `${symbolDest} ${formatearCantidad(vComision, 2)}`;
-          const labelCom = activeCommissionPercent === 3 ? 'Recargo IGTF (3%)' : `Recargo (${activeCommissionPercent >= 0 ? '+' : ''}${activeCommissionPercent}%)`;
+          const activePill = document.querySelector('.commission-btn.active');
+          const esIGTF = activePill && activePill.dataset.value === '3';
+          const labelCom = esIGTF ? 'Recargo IGTF (3%)' : `Recargo (${activeCommissionPercent >= 0 ? '+' : ''}${activeCommissionPercent.toString().replace(/\./g, ',')}%)`;
 
           ctx.fillStyle = '#94a3b8';
           ctx.font = '500 13px "Plus Jakarta Sans", sans-serif';
@@ -2353,7 +2414,9 @@ document.addEventListener('DOMContentLoaded', () => {
       let netoVesNum = totalVesNum / factorCom;
       let recargoVesNum = totalVesNum - netoVesNum;
 
-      const labelCom = activeCommissionPercent === 3 ? 'IGTF (3%)' : `Recargo (${activeCommissionPercent >= 0 ? '+' : ''}${activeCommissionPercent}%)`;
+      const activePill = document.querySelector('.commission-btn.active');
+      const esIGTF = activePill && activePill.dataset.value === '3';
+      const labelCom = esIGTF ? 'IGTF (3%)' : `Recargo (${activeCommissionPercent >= 0 ? '+' : ''}${activeCommissionPercent.toString().replace(/\./g, ',')}%)`;
       mensaje += `\n*Neto:* ${simbDestino} ${formatearCantidad(netoVesNum, 2)} | *${labelCom}:* ${simbDestino} ${formatearCantidad(recargoVesNum, 2)}`;
       mensaje += `\n*Total a pagar:* ${simbDestino} ${formatearCantidad(totalVesNum, 2)}`;
     }
