@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'calc-divisas-v54-copy-tooltip-zindex-fixed';
+const CACHE_NAME = 'calc-divisas-v56-copy-tooltip-mobile-optimized';
 const ASSETS = [
   './',
   './style.css',
