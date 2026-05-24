@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'calc-divisas-v56-copy-tooltip-mobile-optimized';
+const CACHE_NAME = 'calc-divisas-v58-tooltip-opacity-inheritance-fixed';
 const ASSETS = [
   './',
   './style.css',

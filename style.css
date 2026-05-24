@@ -480,9 +480,7 @@ body {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
-  background: rgba(10, 11, 16, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: #0a0b10; /* Fondo 100% sólido y opaco para legibilidad perfecta */
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.75rem;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(var(--accent-color-rgb), 0.15);
@@ -1807,12 +1805,17 @@ body {
   z-index: 100 !important;
 }
 
+/* Evitar que el tooltip de copiado herede la opacidad reducida del contenedor inactivo */
+.input-group:has(.copy-tooltip:not(.hidden)) .input-values-wrapper {
+  opacity: 1 !important;
+}
+
 .copy-tooltip {
   position: absolute;
   bottom: calc(100% + 10px);
   right: 0;
   width: 165px; /* Más ancho para mayor comodidad visual */
-  background: #08090c; /* Fondo 100% sólido y ultra oscuro para legibilidad total */
+  background: #0a0b10; /* Fondo 100% sólido y opaco idéntico al menú de cambio de monedas */
   border: 1px solid rgba(var(--accent-color-rgb), 0.35);
   border-radius: 0.85rem; /* Bordes suaves */
   box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.8), 0 0 20px rgba(var(--accent-color-rgb), 0.15);
@@ -1831,7 +1834,7 @@ body {
   right: 12px;
   width: 10px;
   height: 10px;
-  background: #08090c;
+  background: #0a0b10; /* Fondo idéntico al del tooltip principal */
   border-right: 1px solid rgba(var(--accent-color-rgb), 0.35);
   border-bottom: 1px solid rgba(var(--accent-color-rgb), 0.35);
   transform: rotate(45deg);
