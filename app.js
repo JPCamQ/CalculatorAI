@@ -83,6 +83,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeCommissionPercent = 0;
   let customCommissionType = 'plus'; // 'plus' para recargo (+), 'minus' para descuento (-)
 
+  // Flag para saber si el usuario ha definido una tasa Custom manualmente (reemplaza detección por valor mágico)
+  let customRateInitialized = false;
+
+  // Caché de datos históricos reales desde API (clave: divisa, valor: {data, timestamp})
+  const historicoCache = {};
+
+  // ID de requestAnimationFrame para debounce de conversiones
+  let rafConversionId = null;
+
   // Detectar dispositivo táctil/móvil
   const esDispositivoMovil = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
@@ -496,8 +505,14 @@ document.addEventListener('DOMContentLoaded', () => {
       Object.assign(updateTimes, JSON.parse(savedTimes));
     }
 
-    // Si rates.Custom tiene su valor base por defecto (45.0), lo inicializamos con rates.USD
-    if (rates.Custom === 45.0) {
+    // Recuperar flag de inicialización de tasa Custom desde LocalStorage
+    const savedCustomInit = localStorage.getItem('calc_custom_rate_initialized');
+    if (savedCustomInit === 'true') {
+      customRateInitialized = true;
+    }
+
+    // Si el usuario nunca ha definido una tasa Custom, inicializarla con USD
+    if (!customRateInitialized) {
       rates.Custom = rates.USD;
     }
 
@@ -510,6 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('calc_official_rates', JSON.stringify(officialRates));
     localStorage.setItem('calc_is_manual_rate', JSON.stringify(isManualRate));
     localStorage.setItem('calc_update_times', JSON.stringify(updateTimes));
+    localStorage.setItem('calc_custom_rate_initialized', customRateInitialized.toString());
   }
 
   // --- Consultas a APIs ---
@@ -580,8 +596,8 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('Error al obtener tasa USDT Binance:', err);
     }
 
-    // Si rates.Custom tiene su valor base por defecto (45.0), lo inicializamos con rates.USD
-    if (rates.Custom === 45.0) {
+    // Si el usuario nunca ha definido una tasa Custom manualmente, sincronizar con USD
+    if (!customRateInitialized) {
       rates.Custom = rates.USD;
     }
 
@@ -905,18 +921,27 @@ document.addEventListener('DOMContentLoaded', () => {
     ajustarTamanoFuenteTodos();
   }
 
+  // Debounce con requestAnimationFrame para evitar jank en dispositivos lentos
+  function realizarConversionDebounced() {
+    if (rafConversionId) cancelAnimationFrame(rafConversionId);
+    rafConversionId = requestAnimationFrame(() => {
+      realizarConversion();
+      rafConversionId = null;
+    });
+  }
+
   function recalcularConversiones() {
     realizarConversion();
   }
 
   // Escuchar cambios nativos por si acaso
   inputForeign.addEventListener('input', () => {
-    realizarConversion();
+    realizarConversionDebounced();
     actualizarCintaFormula();
   });
 
   inputVes.addEventListener('input', () => {
-    realizarConversion();
+    realizarConversionDebounced();
     actualizarCintaFormula();
   });
 
@@ -1101,6 +1126,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       if (divisaEditable === 'Custom') {
         rates.Custom = valorFinal;
+        customRateInitialized = true; // Marcar que el usuario definió una tasa Custom
       } else {
         rates[divisaEditable] = valorFinal;
         isManualRate[divisaEditable] = true;
@@ -2146,58 +2172,133 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Semilla de variaciones de tendencia para cada divisa
-  const trendVariations = {
-    USD: 0.18,
-    EUR: -0.05,
-    USDT: 0.22
+  // URLs de APIs históricas reales
+  const HISTORICO_URLS = {
+    USD: 'https://ve.dolarapi.com/v1/historicos/dolares/oficial',
+    EUR: 'https://ve.dolarapi.com/v1/historicos/euros/oficial'
   };
 
-  // Generador de cotizaciones para el historial de 7 días
-  function generarHistorialTasa(divisa) {
-    const tasaActual = rates[divisa] || 45.0;
-    const historial = [];
-    const hoy = new Date();
+  // TTL del caché de historial: 6 horas en milisegundos
+  const HISTORICO_CACHE_TTL = 6 * 60 * 60 * 1000;
 
-    let valorCorriente = tasaActual;
+  // --- Almacenamiento Local Diario para USDT (Sin API histórica disponible) ---
+  function guardarRegistroDiarioUSDT() {
+    if (!rates.USDT || rates.USDT <= 0) return;
 
-    for (let i = 0; i < 7; i++) {
-      const fecha = new Date(hoy);
-      fecha.setDate(hoy.getDate() - i);
+    const hoy = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const registrosRaw = localStorage.getItem('calc_usdt_history');
+    let registros = registrosRaw ? JSON.parse(registrosRaw) : [];
 
-      const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-      const fechaFormateada = `${fecha.getDate()} ${meses[fecha.getMonth()]}`;
+    // Verificar si ya existe un registro para hoy
+    const yaExiste = registros.some(r => r.fecha === hoy);
+    if (!yaExiste) {
+      registros.push({
+        fecha: hoy,
+        promedio: rates.USDT
+      });
+    } else {
+      // Actualizar el valor del día actual
+      registros = registros.map(r => r.fecha === hoy ? { ...r, promedio: rates.USDT } : r);
+    }
 
-      if (i === 0) {
-        historial.push({
-          fecha: fechaFormateada,
-          valor: tasaActual,
-          variacion: 0
-        });
-      } else {
-        // Fluctuación pseudo-aleatoria suave para cada día
-        const cambioPorcentaje = (Math.sin(i * 1.5) * 0.25) + (Math.cos(i * 2.1) * 0.08);
-        const delta = valorCorriente * (cambioPorcentaje / 100);
-        valorCorriente = valorCorriente - delta;
+    // Mantener solo los últimos 30 días
+    registros = registros.slice(-30);
+    localStorage.setItem('calc_usdt_history', JSON.stringify(registros));
+  }
 
-        historial.push({
-          fecha: fechaFormateada,
-          valor: valorCorriente,
-          variacion: cambioPorcentaje
-        });
+  // Guardar registro USDT después de cada consulta a APIs
+  const _consultarAPIsOriginal = consultarAPIs;
+  consultarAPIs = async function() {
+    await _consultarAPIsOriginal();
+    guardarRegistroDiarioUSDT();
+  };
+
+  // Obtener datos históricos reales (con caché en memoria)
+  async function obtenerHistorialReal(divisa) {
+    // Verificar caché en memoria
+    if (historicoCache[divisa]) {
+      const { data, timestamp } = historicoCache[divisa];
+      if (Date.now() - timestamp < HISTORICO_CACHE_TTL) {
+        return data;
       }
     }
 
-    // Calcular las variaciones de forma cronológica
-    for (let i = 0; i < 6; i++) {
-      const valHoy = historial[i].valor;
-      const valAyer = historial[i + 1].valor;
-      const varPorc = valAyer > 0 ? (((valHoy - valAyer) / valAyer) * 100) : 0;
-      historial[i].variacion = varPorc;
-    }
-    historial[6].variacion = 0;
+    // Para USDT: usar registros locales de LocalStorage
+    if (divisa === 'USDT') {
+      const registrosRaw = localStorage.getItem('calc_usdt_history');
+      const registros = registrosRaw ? JSON.parse(registrosRaw) : [];
 
-    return historial;
+      if (registros.length === 0) {
+        return null; // Sin datos históricos disponibles
+      }
+
+      // Tomar los últimos 7 registros (más reciente primero)
+      const ultimos7 = registros.slice(-7).reverse();
+      const historial = ultimos7.map((reg, index) => {
+        const fechaObj = new Date(reg.fecha + 'T12:00:00');
+        const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const fechaFormateada = `${fechaObj.getDate()} ${meses[fechaObj.getMonth()]}`;
+
+        return {
+          fecha: fechaFormateada,
+          valor: reg.promedio,
+          variacion: 0
+        };
+      });
+
+      // Calcular variaciones entre días consecutivos
+      for (let i = 0; i < historial.length - 1; i++) {
+        const valHoy = historial[i].valor;
+        const valAyer = historial[i + 1].valor;
+        historial[i].variacion = valAyer > 0 ? (((valHoy - valAyer) / valAyer) * 100) : 0;
+      }
+
+      historicoCache[divisa] = { data: historial, timestamp: Date.now() };
+      return historial;
+    }
+
+    // Para USD y EUR: consultar API real de DolarAPI
+    const url = HISTORICO_URLS[divisa];
+    if (!url) return null;
+
+    try {
+      const response = await fetchWithTimeout(url, {}, 8000);
+      if (!response.ok) return null;
+
+      const datosCompletos = await response.json();
+      if (!Array.isArray(datosCompletos) || datosCompletos.length === 0) return null;
+
+      // Tomar los últimos 7 registros (el array viene en orden cronológico ASC)
+      const ultimos7 = datosCompletos.slice(-7).reverse();
+
+      const historial = ultimos7.map((reg) => {
+        const fechaObj = new Date(reg.fecha + 'T12:00:00');
+        const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+        const fechaFormateada = `${fechaObj.getDate()} ${meses[fechaObj.getMonth()]}`;
+        const valor = reg.promedio || reg.venta || reg.compra || 0;
+
+        return {
+          fecha: fechaFormateada,
+          valor: valor,
+          variacion: 0
+        };
+      });
+
+      // Calcular variaciones entre días consecutivos
+      for (let i = 0; i < historial.length - 1; i++) {
+        const valHoy = historial[i].valor;
+        const valAyer = historial[i + 1].valor;
+        historial[i].variacion = valAyer > 0 ? (((valHoy - valAyer) / valAyer) * 100) : 0;
+      }
+
+      // Guardar en caché en memoria
+      historicoCache[divisa] = { data: historial, timestamp: Date.now() };
+      return historial;
+
+    } catch (err) {
+      console.warn(`Error al obtener historial real de ${divisa}:`, err);
+      return null;
+    }
   }
 
   // Dibujar gráfico SVG neón interactivo en el modal
@@ -2225,8 +2326,11 @@ document.addEventListener('DOMContentLoaded', () => {
       return chartTop + chartHeight - ((val - gridMin) / range) * chartHeight;
     };
 
+    const numPuntos = datosCronologicos.length;
+    const divisorX = numPuntos > 1 ? numPuntos - 1 : 1;
+
     const puntos = datosCronologicos.map((d, index) => {
-      const x = index * (width / 6);
+      const x = index * (width / divisorX);
       const y = obtenerY(d.valor);
       return { x, y, ...d };
     });
@@ -2307,13 +2411,13 @@ document.addEventListener('DOMContentLoaded', () => {
       textX.setAttribute('x', p.x.toString());
       textX.setAttribute('y', (height - 8).toString());
       textX.setAttribute('style', 'font-size: 9px; font-weight: 600; text-anchor: middle;');
-      textX.textContent = index === 6 ? 'Hoy' : p.fecha;
+      textX.textContent = index === numPuntos - 1 ? 'Hoy' : p.fecha;
       chartLabelsGroup.appendChild(textX);
     });
   }
 
-  // Abrir modal con datos históricos y gráfico
-  function abrirModalHistorial(divisa) {
+  // Abrir modal con datos históricos reales y gráfico
+  async function abrirModalHistorial(divisa) {
     if (!modalHistorial) return;
 
     if (modalCurrencyFlag) {
@@ -2324,15 +2428,67 @@ document.addEventListener('DOMContentLoaded', () => {
       modalTitleText.textContent = `Tasa de Cambio ${divisa}`;
     }
 
-    const historial = generarHistorialTasa(divisa);
+    if (modalSubtitleText) {
+      modalSubtitleText.textContent = 'Cargando datos reales...';
+    }
+
     const tasaActual = rates[divisa] || 0;
 
     if (modalSummaryRate) {
       modalSummaryRate.textContent = `Bs. ${formatearCantidad(tasaActual, 2)}`;
     }
 
-    const valHace7d = historial[6].valor;
-    const varTotalVal = valHace7d > 0 ? (((tasaActual - valHace7d) / valHace7d) * 100) : 0;
+    if (modalSummaryVariation) {
+      modalSummaryVariation.textContent = '...';
+      modalSummaryVariation.className = 'summary-value val-neutral';
+    }
+
+    // Limpiar gráfico y tabla mientras carga
+    if (chartLinePath) chartLinePath.setAttribute('d', '');
+    if (chartAreaPath) chartAreaPath.setAttribute('d', '');
+    if (chartDotsGroup) chartDotsGroup.innerHTML = '';
+    if (chartLabelsGroup) chartLabelsGroup.innerHTML = '';
+    if (chartGridGroup) chartGridGroup.innerHTML = '';
+    if (historyTableBody) historyTableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Cargando historial...</td></tr>';
+
+    // Abrir el modal inmediatamente (los datos se cargan async)
+    modalHistorial.classList.remove('hidden');
+
+    // Consultar datos históricos reales
+    const historial = await obtenerHistorialReal(divisa);
+
+    if (!historial || historial.length === 0) {
+      // Sin datos disponibles
+      if (modalSubtitleText) {
+        if (divisa === 'USDT') {
+          modalSubtitleText.textContent = 'El historial USDT se construye día a día (sin API histórica)';
+        } else {
+          modalSubtitleText.textContent = navigator.onLine ? 'No se pudieron obtener datos históricos' : 'Sin conexión — No hay datos históricos en caché';
+        }
+      }
+      if (modalSummaryVariation) {
+        modalSummaryVariation.textContent = 'N/D';
+        modalSummaryVariation.className = 'summary-value val-neutral';
+      }
+      if (historyTableBody) {
+        const mensajeSinDatos = divisa === 'USDT'
+          ? 'Aún no hay suficientes registros. Los datos se almacenan automáticamente cada día que uses la app.'
+          : 'No se pudieron obtener datos históricos desde la API.';
+        historyTableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">${mensajeSinDatos}</td></tr>`;
+      }
+      return;
+    }
+
+    // Actualizar subtítulo con datos reales
+    if (modalSubtitleText) {
+      const fuente = divisa === 'USDT' ? 'Datos locales (Binance P2P)' : 'Datos oficiales BCV (DolarAPI)';
+      modalSubtitleText.textContent = `${fuente} — Últimos ${historial.length} días`;
+    }
+
+    // Calcular variación total del período
+    const valMasReciente = historial[0].valor;
+    const valMasAntiguo = historial[historial.length - 1].valor;
+    const varTotalVal = valMasAntiguo > 0 ? (((valMasReciente - valMasAntiguo) / valMasAntiguo) * 100) : 0;
 
     if (modalSummaryVariation) {
       const varTotalText = `${varTotalVal >= 0 ? '+' : ''}${formatearCantidad(varTotalVal, 2)}%`;
@@ -2353,7 +2509,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let classVar = 'val-neutral';
         let textVar = '0,00%';
-        if (index < 6) {
+        if (index < historial.length - 1) {
           const v = item.variacion;
           classVar = v > 0 ? 'val-up' : (v < 0 ? 'val-down' : 'val-neutral');
           textVar = `${v >= 0 ? '+' : ''}${formatearCantidad(v, 2)}%`;
@@ -2369,8 +2525,6 @@ document.addEventListener('DOMContentLoaded', () => {
         historyTableBody.appendChild(tr);
       });
     }
-
-    modalHistorial.classList.remove('hidden');
   }
 
   // --- Inicializar Eventos de Copiado Inteligente (Tooltips) ---

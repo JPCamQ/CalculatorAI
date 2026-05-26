@@ -1,5 +1,7 @@
 
-const CACHE_NAME = 'calc-divisas-v58-tooltip-opacity-inheritance-fixed';
+// Versionado de caché basado en fecha de deploy — Actualizar esta fecha al hacer cambios
+const CACHE_VERSION = '2026.05.25';
+const CACHE_NAME = `calc-divisas-v${CACHE_VERSION}`;
 const ASSETS = [
   './',
   './style.css',
