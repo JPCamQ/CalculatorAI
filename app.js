@@ -2757,4 +2757,29 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('ios_install_prompt_dismissed', 'true');
     });
   }
+
+  // --- Lógica del Toggle de Tema (Claro/Oscuro) ---
+  const btnThemeToggle = document.getElementById('btn-theme-toggle');
+  const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+
+  function actualizarMetaThemeColor(theme) {
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', theme === 'dark' ? '#0f172a' : '#ffffff');
+    }
+  }
+
+  if (btnThemeToggle) {
+    btnThemeToggle.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      actualizarMetaThemeColor(newTheme);
+    });
+    
+    // Sincronizar el color del meta al cargar
+    const initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    actualizarMetaThemeColor(initialTheme);
+  }
 });

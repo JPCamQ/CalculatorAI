@@ -29,13 +29,65 @@
   --text-secondary: #475569; /* Slate 600 */
   --text-muted: #64748b; /* Slate 500 */
 
+  --keypad-bg: #ffffff;
+  --keypad-btn-bg: rgba(15, 23, 42, 0.03);
+  --keypad-btn-border: rgba(15, 23, 42, 0.06);
+  --keypad-btn-color: #0f172a;
+
+  --toast-bg: rgba(255, 255, 255, 0.9);
+  --toast-border: rgba(15, 23, 42, 0.08);
+  --toast-text: #0f172a;
+
+  --modal-bg: rgba(255, 255, 255, 0.85);
+  --modal-close-bg: rgba(15, 23, 42, 0.04);
+
+  --swap-btn-bg: #f1f5f9;
+
+  --comisiones-bg: rgba(15, 23, 42, 0.015);
+  --comisiones-border: rgba(15, 23, 42, 0.04);
+  --custom-input-bg: rgba(15, 23, 42, 0.03);
+  --custom-input-border: rgba(15, 23, 42, 0.06);
+  --commission-active-color: var(--accent-color);
+
   --glow-shadow: 0 0 25px rgba(var(--accent-color-rgb), 0.05);
   --card-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.04);
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-fast: all 0.15s ease;
 }
 
+/* --- MODO OSCURO (Premium Glassmorphic) --- */
+[data-theme="dark"] {
+  --bg-dark-1: #0f172a; /* Slate 900 */
+  --bg-dark-2: #020617; /* Slate 950 */
+  --card-bg: rgba(15, 23, 42, 0.45); /* Cristal esmerilado translúcido oscuro */
+  --card-border: rgba(255, 255, 255, 0.08); /* Borde sutil claro */
+  --text-primary: #f8fafc; /* Slate 50 */
+  --text-secondary: #cbd5e1; /* Slate 300 */
+  --text-muted: #94a3b8; /* Slate 400 */
 
+  --keypad-bg: #0f172a;
+  --keypad-btn-bg: rgba(255, 255, 255, 0.03);
+  --keypad-btn-border: rgba(255, 255, 255, 0.06);
+  --keypad-btn-color: #f8fafc;
+
+  --toast-bg: rgba(15, 23, 42, 0.9);
+  --toast-border: rgba(255, 255, 255, 0.08);
+  --toast-text: #f8fafc;
+
+  --modal-bg: rgba(15, 23, 42, 0.85);
+  --modal-close-bg: rgba(255, 255, 255, 0.08);
+
+  --swap-btn-bg: #1e293b;
+
+  --comisiones-bg: rgba(255, 255, 255, 0.02);
+  --comisiones-border: rgba(255, 255, 255, 0.04);
+  --custom-input-bg: rgba(255, 255, 255, 0.03);
+  --custom-input-border: rgba(255, 255, 255, 0.06);
+  --commission-active-color: #ffffff;
+
+  --card-shadow: 0 20px 40px -15px rgba(2, 6, 23, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --glow-shadow: 0 0 25px rgba(var(--accent-color-rgb), 0.15);
+}
 
 /* --- Resets & Base --- */
 *, *::before, *::after {
@@ -51,7 +103,7 @@ html, body {
   height: 100dvh;
   overflow: hidden; /* Deshabilitar scroll general */
   position: fixed; /* Evitar scroll por rebote en móviles */
-  background: radial-gradient(circle at 50% 0%, #ffffff 0%, #f1f5f9 100%);
+  background: radial-gradient(circle at 50% 0%, var(--bg-dark-1) 0%, var(--bg-dark-2) 100%);
   color: var(--text-primary);
   font-family: var(--font-primary);
   font-size: 16px;
@@ -687,8 +739,9 @@ body {
 .swap-button-wrapper {
   position: relative;
   z-index: 2;
-  background: #f1f5f9;
+  background: transparent;
   padding: 0 0.85rem;
+  transition: background-color 0.3s ease;
 }
 
 .swap-icon {
@@ -1054,8 +1107,8 @@ body {
 /* --- Contenedor del Teclado Numérico Fijo --- */
 .keypad-container {
   width: 100%;
-  background: #ffffff;
-  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  background: transparent;
+  border-top: none;
   padding: 0.4rem 0 calc(0.4rem + env(safe-area-inset-bottom)) 0;
   z-index: 10;
   position: relative;
@@ -1063,7 +1116,7 @@ body {
   visibility: visible;
   opacity: 1;
   pointer-events: auto;
-  transition: none;
+  transition: background-color 0.3s ease;
 }
 
 /* Teclas Numéricas */
@@ -1077,10 +1130,10 @@ body {
 
 .keypad-btn {
   height: 2.7rem;
-  background: rgba(15, 23, 42, 0.03);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: var(--keypad-btn-bg);
+  border: 1px solid var(--keypad-btn-border);
   border-radius: 0.75rem;
-  color: #0f172a; /* Números en slate-900 */
+  color: var(--keypad-btn-color);
   font-family: var(--font-secondary);
   font-size: 1.25rem;
   font-weight: 600;
@@ -1304,22 +1357,21 @@ body {
   top: 1.5rem;
   left: 50%;
   transform: translateX(-50%) translateY(-100px);
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--toast-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08), 0 0 15px rgba(var(--accent-color-rgb), 0.05);
-  color: #0f172a;
+  border: 1px solid var(--toast-border);
+  box-shadow: var(--card-shadow), var(--glow-shadow);
+  color: var(--toast-text);
   padding: 0.55rem 1.1rem;
   border-radius: 2rem;
   font-family: var(--font-secondary);
   font-size: 0.8rem;
   font-weight: 600;
   display: flex;
-  align-items: center;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease, background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   gap: 0.5rem;
   z-index: 1000;
-  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
   opacity: 0;
   pointer-events: none;
   white-space: nowrap;
@@ -1351,11 +1403,12 @@ body {
   flex-direction: column;
   gap: 0.35rem;
   margin: 0.15rem 0.3rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--comisiones-bg);
+  border: 1px solid var(--comisiones-border);
   border-radius: 0.75rem;
   padding: 0.4rem 0.6rem;
   order: 5; /* Colocarlo al final de la tarjeta de calculadora */
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .comisiones-title {
@@ -1375,8 +1428,8 @@ body {
 
 .commission-btn {
   flex: 1;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--keypad-btn-bg);
+  border: 1px solid var(--keypad-btn-border);
   border-radius: 2rem;
   padding: 0.35rem 0.15rem;
   color: var(--text-secondary);
@@ -1390,22 +1443,22 @@ body {
 }
 
 .commission-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--keypad-btn-border);
   color: var(--text-primary);
 }
 
 .commission-btn.active {
   background: rgba(var(--accent-color-rgb), 0.15);
   border-color: rgba(var(--accent-color-rgb), 0.45);
-  color: #ffffff;
+  color: var(--commission-active-color);
   box-shadow: 0 0 10px rgba(var(--accent-color-rgb), 0.1);
 }
 
 .custom-commission-input-wrapper {
   display: flex;
   align-items: center;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--custom-input-bg);
+  border: 1px solid var(--custom-input-border);
   border-radius: 0.5rem;
   padding: 0.25rem 0.5rem;
   transition: var(--transition-smooth);
@@ -1424,8 +1477,8 @@ body {
 
 .commission-type-selector {
   display: flex;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--keypad-btn-bg);
+  border: 1px solid var(--keypad-btn-border);
   border-radius: 0.35rem;
   padding: 0.1rem;
   margin-right: 0.5rem;
@@ -1471,7 +1524,7 @@ body {
   flex: 1;
   background: transparent;
   border: none;
-  color: #ffffff;
+  color: var(--text-primary);
   font-family: var(--font-secondary);
   font-size: 0.8rem;
   font-weight: 600;
@@ -1560,12 +1613,12 @@ body {
   position: relative;
   width: 100%;
   max-width: 440px;
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--modal-bg);
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--card-border);
   border-radius: 1.5rem;
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.12), 0 0 30px rgba(var(--accent-color-rgb), 0.02);
+  box-shadow: var(--card-shadow);
   display: flex;
   flex-direction: column;
   max-height: 90dvh;
@@ -1584,7 +1637,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 1.25rem 1rem 1.25rem;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  border-bottom: 1px solid var(--card-border);
 }
 
 .modal-title-group {
@@ -1622,8 +1675,8 @@ body {
 }
 
 .close-modal-btn {
-  background: rgba(15, 23, 42, 0.04);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: var(--modal-close-bg);
+  border: 1px solid var(--card-border);
   border-radius: 50%;
   width: 1.85rem;
   height: 1.85rem;
@@ -2143,5 +2196,37 @@ body {
     gap: 0.2rem;
     padding: 0.15rem 0.35rem;
   }
+}
+
+/* --- Estilos y Animaciones del Botón Toggle Tema --- */
+.theme-toggle-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-toggle-btn svg {
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+}
+
+html[data-theme="light"] .theme-icon-sun {
+  opacity: 0;
+  transform: rotate(90deg) scale(0);
+  position: absolute;
+}
+
+html[data-theme="light"] .theme-icon-moon {
+  opacity: 1;
+  transform: rotate(0) scale(1);
+}
+
+html[data-theme="dark"] .theme-icon-sun {
+  opacity: 1;
+  transform: rotate(0) scale(1);
+}
+
+html[data-theme="dark"] .theme-icon-moon {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0);
+  position: absolute;
 }
 
