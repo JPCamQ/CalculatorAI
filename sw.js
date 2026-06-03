@@ -1,6 +1,6 @@
 
 // Versionado de caché basado en fecha de deploy — Actualizar esta fecha al hacer cambios
-const CACHE_VERSION = '2026.05.25';
+const CACHE_VERSION = '2026.06.03';
 const CACHE_NAME = `calc-divisas-v${CACHE_VERSION}`;
 const ASSETS = [
   './',
@@ -125,8 +125,9 @@ self.addEventListener('fetch', (e) => {
 
       return fetch(e.request)
         .then((networkResponse) => {
-          // Almacenar dinámicamente respuestas válidas del mismo origen
-          if (networkResponse && networkResponse.status === 200 && url.origin === location.origin) {
+          // Almacenar dinámicamente respuestas válidas (mismo origen o Google Fonts)
+          const isGoogleFont = url.hostname.includes('fonts.googleapis.com') || url.hostname.includes('fonts.gstatic.com');
+          if (networkResponse && networkResponse.status === 200 && (url.origin === location.origin || isGoogleFont)) {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(e.request, responseToCache).catch((err) => {

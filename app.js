@@ -1045,15 +1045,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // Asignar el valor numérico del origen anterior al nuevo input activo (solo si ambos son divisas)
-      if (esDivisaAnterior && esDivisaNueva) {
-        if (!isNaN(valorPrevioRaw) && valorPrevioRaw > 0) {
-          activeInput.value = formatearCantidad(valorPrevioRaw, 2);
-        } else {
-          activeInput.value = '';
-        }
-      }
-
       animarEntradaInputs();
       actualizarDisplayTasa();
       realizarConversion();
@@ -1168,6 +1159,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!esDispositivoMovil) {
       inputCustomCommission.readOnly = true;
     }
+
+    // Formatear visualmente
+    let valText = inputCustomCommission.value.trim().replace(/,/g, '.');
+    valText = valText.replace(/[^\d\.]/g, '');
+    let val = parseFloat(valText) || 0;
+    if (val > 100) val = 100;
+    inputCustomCommission.value = val.toFixed(2).replace('.', ',');
 
     // Restaurar activeInput a la divisa correspondiente
     const nuevoInput = !isReversed ? inputForeign : inputVes;
@@ -1615,50 +1613,50 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.height = 800;
         const ctx = canvas.getContext('2d');
 
-        // Dibujar fondo degradado premium oscuro
+        // Dibujar fondo degradado premium claro (en vez de oscuro)
         const grad = ctx.createLinearGradient(0, 0, 0, 800);
-        grad.addColorStop(0, '#07080c');
-        grad.addColorStop(1, '#010102');
+        grad.addColorStop(0, '#f8fafc');
+        grad.addColorStop(1, '#e2e8f0');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 800, 800);
 
-        // Obtener color de acento según la divisa origen activa
+        // Obtener color de acento según la divisa origen activa (colores con alto contraste)
         const divisaOrigenActiva = !isReversed ? activeForeignCurrency : activeVesCurrency;
         const accentHex = {
-          USD: '#22c55e',
-          EUR: '#3b82f6',
-          USDT: '#00b4d8',
-          VES: '#a3e635',
-          Custom: '#facc15'
-        }[divisaOrigenActiva] || '#22c55e';
+          USD: '#16a34a',
+          EUR: '#1d4ed8',
+          USDT: '#0891b2',
+          VES: '#4d7c0f',
+          Custom: '#b45309'
+        }[divisaOrigenActiva] || '#16a34a';
 
         const accentRGB = {
-          USD: '34, 197, 94',
-          EUR: '59, 130, 246',
-          USDT: '0, 180, 216',
-          VES: '163, 230, 53',
-          Custom: '250, 204, 21'
-        }[divisaOrigenActiva] || '34, 197, 94';
+          USD: '22, 163, 74',
+          EUR: '29, 78, 216',
+          USDT: '8, 145, 178',
+          VES: '77, 124, 15',
+          Custom: '180, 83, 9'
+        }[divisaOrigenActiva] || '22, 163, 74';
 
-        // Glows ambientales de neón sutiles en las esquinas
+        // Glows ambientales de color sutiles en las esquinas (baja opacidad para modo claro)
         const glowRad1 = ctx.createRadialGradient(100, 100, 10, 100, 100, 300);
-        glowRad1.addColorStop(0, `rgba(${accentRGB}, 0.09)`);
-        glowRad1.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        glowRad1.addColorStop(0, `rgba(${accentRGB}, 0.05)`);
+        glowRad1.addColorStop(1, 'rgba(255, 255, 255, 0)');
         ctx.fillStyle = glowRad1;
         ctx.beginPath();
         ctx.arc(100, 100, 300, 0, Math.PI * 2);
         ctx.fill();
 
         const glowRad2 = ctx.createRadialGradient(700, 700, 10, 700, 700, 300);
-        glowRad2.addColorStop(0, `rgba(${accentRGB}, 0.09)`);
-        glowRad2.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        glowRad2.addColorStop(0, `rgba(${accentRGB}, 0.05)`);
+        glowRad2.addColorStop(1, 'rgba(255, 255, 255, 0)');
         ctx.fillStyle = glowRad2;
         ctx.beginPath();
         ctx.arc(700, 700, 300, 0, Math.PI * 2);
         ctx.fill();
 
         // Cuadrícula tecnológica muy tenue de fondo
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.012)';
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.015)';
         ctx.lineWidth = 1;
         for (let x = 0; x < 800; x += 40) {
           ctx.beginPath();
@@ -1679,13 +1677,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const cardH = 680;
         const cardR = 24;
 
-        // Dibujar tarjeta interior con sombra realista y profunda
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+        // Dibujar tarjeta interior con sombra realista, suave y clara
+        ctx.shadowColor = 'rgba(15, 23, 42, 0.08)';
         ctx.shadowBlur = 45;
         ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 22;
+        ctx.shadowOffsetY = 20;
 
-        ctx.fillStyle = 'rgba(15, 17, 26, 0.75)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.90)';
         ctx.beginPath();
         ctx.roundRect(cardX, cardY, cardW, cardH, cardR);
         ctx.fill();
@@ -1697,10 +1695,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Borde glassmorphic brillante (reflectante) de la tarjeta
         const strokeGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
-        strokeGrad.addColorStop(0, 'rgba(255, 255, 255, 0.16)');
-        strokeGrad.addColorStop(0.3, 'rgba(255, 255, 255, 0.02)');
-        strokeGrad.addColorStop(0.7, 'rgba(255, 255, 255, 0.01)');
-        strokeGrad.addColorStop(1, `rgba(${accentRGB}, 0.28)`);
+        strokeGrad.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+        strokeGrad.addColorStop(0.3, 'rgba(15, 23, 42, 0.02)');
+        strokeGrad.addColorStop(0.7, 'rgba(15, 23, 42, 0.01)');
+        strokeGrad.addColorStop(1, `rgba(${accentRGB}, 0.20)`);
         ctx.strokeStyle = strokeGrad;
         ctx.lineWidth = 1.5;
         ctx.stroke();
@@ -1722,8 +1720,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Dibujar flechas del logo
-        ctx.strokeStyle = '#ffffff';
+        // Dibujar flechas del logo (en color Slate 900 oscuro)
+        ctx.strokeStyle = '#0f172a';
         ctx.lineWidth = 2.5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -1743,12 +1741,12 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.stroke();
 
         // Textos de cabecera
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#0f172a';
         ctx.font = 'bold 22px "Outfit", sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText('CALCULATOR VES', logoX + 35, logoY - 2);
 
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = '#475569';
         ctx.font = '600 11px "Plus Jakarta Sans", sans-serif';
         ctx.fillText('COMPROBANTE DE CONVERSIÓN', logoX + 35, logoY + 16);
 
@@ -1763,8 +1761,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const dateBoxX = cardX + cardW - dateBoxW - 50;
         const dateBoxY = logoY - 14;
 
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.025)';
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.03)';
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.06)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.roundRect(dateBoxX, dateBoxY, dateBoxW, dateBoxH, 10);
@@ -1772,7 +1770,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.stroke();
 
         // Imprimir fecha centrada en la caja
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = '#475569';
         ctx.font = '500 11px "Plus Jakarta Sans", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(fechaStr, dateBoxX + dateBoxW / 2, dateBoxY + 21);
@@ -1784,11 +1782,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const boxH = 100;
 
         // Sombra suave para la Caja 1
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.22)';
+        ctx.shadowColor = 'rgba(15, 23, 42, 0.03)';
         ctx.shadowBlur = 15;
         ctx.shadowOffsetY = 6;
 
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.022)';
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.02)';
         ctx.beginPath();
         ctx.roundRect(boxX, box1Y, boxW, boxH, 16);
         ctx.fill();
@@ -1798,17 +1796,17 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.shadowBlur = 0;
         ctx.shadowOffsetY = 0;
 
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.04)';
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = '#64748b';
         ctx.font = '600 11px "Plus Jakarta Sans", sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText('MONTO ORIGINAL', boxX + 24, box1Y + 34);
 
         const symbolOrig = currencySymbols[codForeign] || '';
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#0f172a';
         ctx.font = 'bold 32px "Outfit", sans-serif';
         ctx.fillText(`${symbolOrig} ${valForeign}`, boxX + 24, box1Y + 72);
 
@@ -1839,7 +1837,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const box2Y = arrowY + 30;
 
         // Sombra suave para la Caja 2
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.28)';
+        ctx.shadowColor = 'rgba(15, 23, 42, 0.04)';
         ctx.shadowBlur = 20;
         ctx.shadowOffsetY = 8;
 
@@ -1864,7 +1862,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fillText(activeCommissionPercent !== 0 ? 'VALOR CONVERTIDO (TOTAL CON RECARGO)' : 'VALOR CONVERTIDO', boxX + 24, box2Y + 34);
 
         const symbolDest = currencySymbols[codVes] || '';
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#0f172a';
         ctx.font = 'bold 36px "Outfit", sans-serif';
         ctx.fillText(`${symbolDest} ${valVes}`, boxX + 24, box2Y + 72);
 
@@ -1880,7 +1878,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const esIGTF = activePill && activePill.dataset.value === '3';
           const labelCom = esIGTF ? 'Recargo IGTF (3%)' : `Recargo (${activeCommissionPercent >= 0 ? '+' : ''}${activeCommissionPercent.toString().replace(/\./g, ',')}%)`;
 
-          ctx.fillStyle = '#94a3b8';
+          ctx.fillStyle = '#475569';
           ctx.font = '500 13px "Plus Jakarta Sans", sans-serif';
           ctx.fillText(`Neto: ${textNeto}    |    ${labelCom}: ${textCom}`, boxX + 24, box2Y + 112);
         }
@@ -1888,20 +1886,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Caja 3: Información Tasa y Referencia
         const infoY = box2Y + boxH2 + 30;
         const infoH = 95;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.01)';
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.04)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.roundRect(boxX, infoY, boxW, infoH, 12);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = '#64748b';
         ctx.font = '600 12px "Plus Jakarta Sans", sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText('TASA DE CAMBIO APLICADA:', boxX + 20, infoY + 30);
 
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#0f172a';
         ctx.font = 'bold 15px "Outfit", sans-serif';
         ctx.textAlign = 'right';
         ctx.fillText(tasaTexto, boxX + boxW - 20, infoY + 30);
@@ -1911,7 +1909,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.textAlign = 'left';
         ctx.fillText('FUENTES / ACTUALIZACIÓN:', boxX + 20, infoY + 65);
 
-        ctx.fillStyle = '#e2e8f0';
+        ctx.fillStyle = '#334155';
         ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
         ctx.textAlign = 'right';
         ctx.fillText(tasaUpdate, boxX + boxW - 20, infoY + 65);
@@ -1923,7 +1921,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.textAlign = 'center';
         ctx.fillText('CALCULADO DE FORMA SEGURA CON CALCULATOR VES', 400, footerY);
 
-        ctx.fillStyle = 'rgba(163, 230, 53, 0.6)';
+        ctx.fillStyle = '#4d7c0f';
         ctx.font = 'bold 11px "Outfit", sans-serif';
         ctx.fillText('calculator-ves.onrender.com', 400, footerY + 16);
 
@@ -2119,18 +2117,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     inputCustomCommission.addEventListener('blur', () => {
-      if (isEditingCustomCommission) {
-        confirmarComisionManual();
-      } else {
-        let valText = inputCustomCommission.value.trim().replace(/,/g, '.');
-        valText = valText.replace(/[^\d\.]/g, '');
-        let val = parseFloat(valText) || 0;
-        if (val > 100) val = 100;
-
-        // Formatear visualmente sin signo unario en el input
-        inputCustomCommission.value = val.toFixed(2).replace('.', ',');
-        actualizarComisionPersonalizada();
-      }
+      confirmarComisionManual();
     });
 
     // Soporte para que al presionar Enter en comisiones personalizadas se oculte el teclado
