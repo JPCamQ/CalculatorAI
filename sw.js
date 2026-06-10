@@ -1,6 +1,6 @@
 
 // Versionado de caché basado en fecha de deploy — Actualizar esta fecha al hacer cambios
-const CACHE_VERSION = '2026.06.10_v1';
+const CACHE_VERSION = '2026.06.10_v2';
 const CACHE_NAME = `calc-divisas-v${CACHE_VERSION}`;
 const ASSETS = [
   './',

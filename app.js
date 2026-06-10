@@ -1207,14 +1207,22 @@ document.addEventListener('DOMContentLoaded', () => {
       confirmarComisionManual();
     }
   });
-
   // --- Manejadores de los Selectores de Monedas Dropdown ---
   if (foreignSelectTrigger && foreignOptionsDropdown) {
     foreignSelectTrigger.addEventListener('click', (e) => {
       e.stopPropagation();
       vibrarTeclado();
-      foreignOptionsDropdown.classList.toggle('hidden');
-      if (vesOptionsDropdown) vesOptionsDropdown.classList.add('hidden');
+      const isHidden = foreignOptionsDropdown.classList.toggle('hidden');
+      const container = foreignSelectTrigger.parentElement;
+      if (isHidden) {
+        container.classList.remove('open');
+      } else {
+        container.classList.add('open');
+        if (vesOptionsDropdown) {
+          vesOptionsDropdown.classList.add('hidden');
+          vesOptionsDropdown.parentElement.classList.remove('open');
+        }
+      }
     });
   }
 
@@ -1222,8 +1230,17 @@ document.addEventListener('DOMContentLoaded', () => {
     vesSelectTrigger.addEventListener('click', (e) => {
       e.stopPropagation();
       vibrarTeclado();
-      vesOptionsDropdown.classList.toggle('hidden');
-      if (foreignOptionsDropdown) foreignOptionsDropdown.classList.add('hidden');
+      const isHidden = vesOptionsDropdown.classList.toggle('hidden');
+      const container = vesSelectTrigger.parentElement;
+      if (isHidden) {
+        container.classList.remove('open');
+      } else {
+        container.classList.add('open');
+        if (foreignOptionsDropdown) {
+          foreignOptionsDropdown.classList.add('hidden');
+          foreignOptionsDropdown.parentElement.classList.remove('open');
+        }
+      }
     });
   }
 
@@ -1231,9 +1248,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', (e) => {
     if (foreignOptionsDropdown && !e.target.closest('#group-foreign .currency-select-container')) {
       foreignOptionsDropdown.classList.add('hidden');
+      foreignOptionsDropdown.parentElement.classList.remove('open');
     }
     if (vesOptionsDropdown && !e.target.closest('#group-ves .currency-select-container')) {
       vesOptionsDropdown.classList.add('hidden');
+      vesOptionsDropdown.parentElement.classList.remove('open');
     }
   });
 
@@ -1241,9 +1260,11 @@ document.addEventListener('DOMContentLoaded', () => {
     item.addEventListener('click', (e) => {
       e.stopPropagation();
       vibrarTeclado();
-      if (foreignOptionsDropdown) foreignOptionsDropdown.classList.add('hidden');
+      if (foreignOptionsDropdown) {
+        foreignOptionsDropdown.classList.add('hidden');
+        foreignOptionsDropdown.parentElement.classList.remove('open');
+      }
       const selectedCurrency = item.dataset.currency;
-
       if (activeForeignCurrency !== selectedCurrency) {
         activeForeignCurrency = selectedCurrency;
         actualizarDisplayTasa();
@@ -1262,7 +1283,10 @@ document.addEventListener('DOMContentLoaded', () => {
     item.addEventListener('click', (e) => {
       e.stopPropagation();
       vibrarTeclado();
-      if (vesOptionsDropdown) vesOptionsDropdown.classList.add('hidden');
+      if (vesOptionsDropdown) {
+        vesOptionsDropdown.classList.add('hidden');
+        vesOptionsDropdown.parentElement.classList.remove('open');
+      }
       const selectedCurrency = item.dataset.currency;
 
       // Custom ahora se trata como cualquier otra divisa del selector inferior

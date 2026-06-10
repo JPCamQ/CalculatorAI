@@ -432,6 +432,11 @@ body {
   z-index: 5; /* Asegura que la fila activa se dibuje por encima de la linea y boton de swap */
 }
 
+/* Elevar z-index del input-group completo cuando su dropdown esta abierto para evitar solapamientos */
+.input-group:has(.currency-select-container.open) {
+  z-index: 100 !important;
+}
+
 .input-values-wrapper {
   flex: 1;
   display: flex;
