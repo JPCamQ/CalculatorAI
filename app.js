@@ -651,11 +651,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!isReversed) {
       // El selector origen es #foreign-selector-row. El selector destino (abajo) es #ves-selector-row.
-      // Ocultar botón VES arriba
+      // Ocultar botón VES arriba (VES no puede ser divisa origen en modo normal)
       if (btnForeign_Ves) btnForeign_Ves.classList.add('hidden');
-
-      // Ocultar botón Custom abajo
-      if (btnVes_Custom) btnVes_Custom.classList.add('hidden');
 
       if (activeForeignCurrency === 'USD') {
         if (btnVes_Usd) btnVes_Usd.classList.add('hidden');
@@ -667,15 +664,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (activeVesCurrency === 'EUR') {
           activeVesCurrency = 'VES';
         }
-      } else if (activeForeignCurrency === 'USDT' || activeForeignCurrency === 'Custom') {
+      } else if (activeForeignCurrency === 'USDT') {
         if (btnVes_Usd) btnVes_Usd.classList.add('hidden');
         if (btnVes_Eur) btnVes_Eur.classList.add('hidden');
         activeVesCurrency = 'VES';
+      } else if (activeForeignCurrency === 'Custom') {
+        // Custom se comporta como USD: ocultar Custom del selector destino para evitar duplicado
+        if (btnVes_Custom) btnVes_Custom.classList.add('hidden');
+        if (activeVesCurrency === 'Custom') {
+          activeVesCurrency = 'VES';
+        }
       }
     } else {
       // El selector origen es #ves-selector-row. El selector destino (abajo) es #foreign-selector-row.
-      // Ocultar botón Custom abajo
-      if (btnForeign_Custom) btnForeign_Custom.classList.add('hidden');
+      // Solo ocultar Custom abajo si ya está seleccionado arriba (evitar duplicado)
+      if (activeVesCurrency === 'Custom') {
+        if (btnForeign_Custom) btnForeign_Custom.classList.add('hidden');
+      }
 
       // Ocultar siempre USD arriba en modo invertido
       if (btnVes_Usd) btnVes_Usd.classList.add('hidden');
@@ -694,6 +699,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnForeign_Usdt) btnForeign_Usdt.classList.add('hidden');
         if (btnForeign_Eur) btnForeign_Eur.classList.add('hidden');
         if (activeForeignCurrency !== 'USD' && activeForeignCurrency !== 'VES') {
+          activeForeignCurrency = 'USD';
+        }
+      } else if (activeVesCurrency === 'Custom') {
+        // Custom como origen en modo invertido: ocultar Custom abajo y evitar duplicado
+        if (btnForeign_Custom) btnForeign_Custom.classList.add('hidden');
+        if (activeForeignCurrency === 'Custom') {
           activeForeignCurrency = 'USD';
         }
       }
@@ -1254,19 +1265,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (vesOptionsDropdown) vesOptionsDropdown.classList.add('hidden');
       const selectedCurrency = item.dataset.currency;
 
-      if (selectedCurrency === 'Custom') {
-        activeForeignCurrency = 'Custom';
-        activeVesCurrency = 'VES';
-        isReversed = false;
-        calculatorCard.classList.remove('reversed');
-        cambiarInputActivo(inputForeign);
-        inputForeign.value = formatearCantidad(1, 2);
-        clearOnNextKey = true;
-
-        actualizarDisplayTasa();
-        realizarConversion();
-        return;
-      }
+      // Custom ahora se trata como cualquier otra divisa del selector inferior
 
       if (activeVesCurrency !== selectedCurrency) {
         activeVesCurrency = selectedCurrency;
